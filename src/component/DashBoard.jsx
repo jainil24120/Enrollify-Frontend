@@ -5,7 +5,6 @@ import "./DashBoard.css";
 import { Search, Filter, MessageCircle, X, Download, Plus, LayoutGrid, List, Link, Edit2, BarChart2, Copy, MoreVertical, Wallet, Landmark, ArrowUpRight, DownloadCloud, CreditCard, Settings, Link2, ShieldCheck, RefreshCw, Mail, MessageSquare, Activity, CheckCircle2, User, Globe, Palette, Bell, Lock, Trash2, FileText, RotateCcw } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
-import { plans } from "../data/mockData";
 import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI, getClientAudienceAPI, getClientSubscriptionAPI, getClientProfileAPI, updateClientProfileAPI } from "../api/clientApi";
 import { API_BASE } from "../api/config.js";
 
@@ -142,54 +141,36 @@ const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
     );
 };
 
-const OverviewSection = ({ selectedPlan, selectPlan, subdomain, userName, clientOrg, setActiveTab, dashboardStats, subscriptionData, audienceList = [] }) => {
-    const plans = [
-        {
-            name: "Basic",
-            price: "₹699",
-            features: [
-                "1 Active Webinar",
-                "Enrollify Subdomain",
-                "Basic Landing Page Builder",
-                "Email Reminders",
-                "Razorpay Integration",
-                "8% Transaction Fee",
-                "Standard Support"
-            ],
-            btnText: "Start Basic"
-        },
-        {
-            name: "Growth",
-            price: "₹1499",
-            features: [
-                "5 Active Webinars",
-                "Advanced Page Builder",
-                "Email + WhatsApp Automation",
-                "Razorpay & Stripe",
-                "Analytics Dashboard",
-                "Meta Pixel Tracking",
-                "5% Transaction Fee",
-                "Priority Support"
-            ],
-            btnText: "Go Growth",
-            featured: true
-        },
-        {
-            name: "Elite",
-            price: "₹1999",
-            features: [
-                "Unlimited Webinars",
-                "Custom Domain",
-                "Advanced Revenue Analytics",
-                "Conversion Tracking Dashboard",
-                "Affiliate System",
-                "API Access",
-                "2% Transaction Fee",
-                "Dedicated Support"
-            ],
-            btnText: "Upgrade to Elite"
-        }
-    ];
+const OverviewSection = ({ selectedPlan, selectPlan, subdomain, userName, clientOrg, setActiveTab, dashboardStats, subscriptionData, audienceList = [], backendPlans = [] }) => {
+    const plans = backendPlans.map((plan) => {
+        const f = plan.features || {};
+        const features = [];
+        if (f.webinarsLimit === null) features.push("Unlimited Webinars");
+        else if (f.webinarsLimit) features.push(`${f.webinarsLimit} Active Webinar${f.webinarsLimit > 1 ? 's' : ''}`);
+        if (f.subdomain) features.push("Enrollify Subdomain");
+        if (f.customDomain) features.push("Custom Domain");
+        if (f.landingPageBuilder) features.push(`${f.landingPageBuilder === 'advanced' ? 'Advanced' : 'Basic'} Landing Page Builder`);
+        if (f.emailAutomation && f.whatsappAutomation) features.push("Email + WhatsApp Automation");
+        else if (f.emailAutomation) features.push("Email Reminders");
+        if (f.paymentGateways?.razorpay && f.paymentGateways?.stripe) features.push("Razorpay & Stripe");
+        else if (f.paymentGateways?.razorpay) features.push("Razorpay Integration");
+        if (f.analytics) features.push("Analytics Dashboard");
+        if (f.advancedAnalytics) features.push("Advanced Revenue Analytics");
+        if (f.metaPixel) features.push("Meta Pixel Tracking");
+        if (f.conversionTracking) features.push("Conversion Tracking Dashboard");
+        if (f.affiliateSystem) features.push("Affiliate System");
+        if (f.apiAccess) features.push("API Access");
+        if (f.transactionFee) features.push(`${f.transactionFee}% Transaction Fee`);
+        if (f.support) features.push(`${f.support.charAt(0).toUpperCase() + f.support.slice(1)} Support`);
+
+        return {
+            name: plan.name,
+            price: `₹${plan.price}`,
+            features,
+            btnText: plan.name === "Basic" ? "Start Basic" : plan.name === "Growth" ? "Go Growth" : "Upgrade to Elite",
+            featured: plan.name === "Growth",
+        };
+    });
 
     return (
         <>
@@ -743,7 +724,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
 
 
 
-const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActiveTab, paymentMethods, onEditPayment, onAddPayment, subscriptionData }) => (
+const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActiveTab, paymentMethods, onEditPayment, onAddPayment, subscriptionData, backendPlans = [] }) => (
     <div className="billing-section">
         <div className="billing-hero-card">
             <div className="billing-hero-header">
@@ -763,18 +744,16 @@ const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActive
             </div>
 
             <div className="billing-plans-selector">
-                {["Basic", "Growth", "Elite"].map((plan) => (
-                    <div key={plan} className={`billing-plan-mini-card ${selectedPlan === plan ? 'active' : ''}`}>
+                {backendPlans.map((plan) => (
+                    <div key={plan.name} className={`billing-plan-mini-card ${selectedPlan === plan.name ? 'active' : ''}`}>
                         <div className="mini-plan-info">
-                            <h4>{plan} Plan</h4>
+                            <h4>{plan.name} Plan</h4>
                             <p className="mini-plan-price">
-                                {plan === "Basic" && "₹699"}
-                                {plan === "Growth" && "₹1499"}
-                                {plan === "Elite" && "₹1999"}
+                                ₹{plan.price}
                                 <span className="text-xs text-muted">/mo</span>
                             </p>
                         </div>
-                        {selectedPlan === plan ? (
+                        {selectedPlan === plan.name ? (
                             <div className="plan-status-running">
                                 <CheckCircle2 size={14} /> Running
                             </div>
@@ -1218,7 +1197,7 @@ const PaymentModal = ({ show, onClose, onSave, editingMethod }) => {
 
 const DashBoard = () => {
     console.log("--- DASHBOARD RENDER ---", { time: new Date().toISOString() });
-    const [selectedPlan, setSelectedPlan] = useState(localStorage.getItem("selectedPlan") || null);
+    const [selectedPlan, setSelectedPlan] = useState(null);
     const [isProfileMissing, setIsProfileMissing] = useState(false);
     const [activeTab, setActiveTab] = useState("Overview");
     console.log("Active Tab:", activeTab);
@@ -1248,6 +1227,7 @@ const DashBoard = () => {
     const [webinarStats, setWebinarStats] = useState([]);
     const [audienceList, setAudienceList] = useState([]);
     const [subscriptionData, setSubscriptionData] = useState(null);
+    const [backendPlans, setBackendPlans] = useState([]);
     const [showDebug, setShowDebug] = useState(false);
 
     const getComplex = (res) => {
@@ -1307,6 +1287,18 @@ const DashBoard = () => {
         const fetchDashboardData = async () => {
 
             try {
+                // Fetch subscription plans from backend
+                try {
+                    const plansRes = await fetch(`${API_BASE}/api/subscriptions`);
+                    if (plansRes.ok) {
+                        const plansData = await plansRes.json();
+                        const plansList = Array.isArray(plansData) ? plansData : plansData.data || [];
+                        setBackendPlans(plansList);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch plans:", e);
+                }
+
                 const [dashboardRes, webinarStatsRes, audienceRes, subscriptionRes] = await Promise.allSettled([
                     getClientDashboardAPI(),
                     getClientWebinarStatsAPI(),
@@ -1339,22 +1331,23 @@ const DashBoard = () => {
         fetchDashboardData();
     }, []);
 
-    // Load payment methods from localStorage
+    // Load payment methods from subscription data
     useEffect(() => {
-        const savedMethods = localStorage.getItem("paymentMethods");
-        if (savedMethods) {
-            setPaymentMethods(JSON.parse(savedMethods));
-        } else {
-            // Default initial card
-            const initial = [{ id: 1, last4: "4242", expiry: "12/26", name: "Divas Gupta" }];
-            setPaymentMethods(initial);
-            localStorage.setItem("paymentMethods", JSON.stringify(initial));
+        if (subscriptionData) {
+            const methods = [];
+            if (subscriptionData.bankDetails?.accountNumber) {
+                methods.push({ id: 1, last4: subscriptionData.bankDetails.accountNumber.slice(-4), name: subscriptionData.bankDetails.bankName || "Bank Account", type: "bank" });
+            }
+            if (subscriptionData.upiId) {
+                methods.push({ id: 2, name: subscriptionData.upiId, type: "upi" });
+            }
+            if (methods.length > 0) setPaymentMethods(methods);
         }
-    }, []);
+    }, [subscriptionData]);
 
     const handleSavePayment = (data) => {
         let updatedMethods;
-        const last4 = data.number.slice(-4);
+        const last4 = data.number ? data.number.slice(-4) : "";
 
         if (editingPaymentMethod) {
             updatedMethods = paymentMethods.map(m =>
@@ -1365,7 +1358,6 @@ const DashBoard = () => {
         }
 
         setPaymentMethods(updatedMethods);
-        localStorage.setItem("paymentMethods", JSON.stringify(updatedMethods));
         setIsPaymentModalOpen(false);
         setEditingPaymentMethod(null);
     };
@@ -1380,22 +1372,11 @@ const DashBoard = () => {
         setIsPaymentModalOpen(true);
     };
 
-    // Load and Save Plan
+    // Set selected plan from backend subscription data
     useEffect(() => {
-        if (subscriptionData) {
-            if (subscriptionData.isActive) {
-                // simple mapping assumption based on typical limits
-                const limit = subscriptionData.subscription?.features?.webinarsLimit;
-                if (limit === null || limit === "null") setSelectedPlan("Elite");
-                else if (limit > 1) setSelectedPlan("Growth");
-                else setSelectedPlan("Basic");
-            } else {
-                const savedPlan = localStorage.getItem("selectedPlan");
-                if (savedPlan) setSelectedPlan(savedPlan);
-            }
-        } else {
-            const savedPlan = localStorage.getItem("selectedPlan");
-            if (savedPlan) setSelectedPlan(savedPlan);
+        if (subscriptionData && subscriptionData.subscription) {
+            const planName = subscriptionData.subscription.name;
+            if (planName) setSelectedPlan(planName);
         }
     }, [subscriptionData]);
 
@@ -1631,9 +1612,6 @@ const DashBoard = () => {
 
             await updateClientProfileAPI(payload);
 
-            // Also keep localStorage in sync for other components
-            localStorage.setItem("userName", userName);
-
             setIsSavingSettings(false);
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
@@ -1696,6 +1674,7 @@ const DashBoard = () => {
                             dashboardStats={dashboardStats}
                             subscriptionData={subscriptionData}
                             audienceList={audienceList}
+                            backendPlans={backendPlans}
                         />
                     </ErrorBoundary>
                 )}
@@ -1745,6 +1724,7 @@ const DashBoard = () => {
                             onEditPayment={openEditPayment}
                             onAddPayment={openAddPayment}
                             subscriptionData={subscriptionData}
+                            backendPlans={backendPlans}
                         />
                     </ErrorBoundary>
                 )}

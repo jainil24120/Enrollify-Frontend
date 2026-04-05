@@ -196,7 +196,7 @@ function ClientForm() {
     if (Object.keys(newErrors).length === 0) {
       const startPaymentProcess = async () => {
         try {
-          const planIntent = localStorage.getItem("selectedPlanIntent") || "growth";
+          const planIntent = (localStorage.getItem("selectedPlanIntent") || "growth").toLowerCase();
 
           const selectedPlanId = planIds[planIntent];
           if (!selectedPlanId) {
@@ -258,13 +258,8 @@ function ClientForm() {
                 });
 
                 if (verifyRes.success || verifyRes) {
-                  localStorage.setItem("clientProfile", JSON.stringify(profilePayload));
                   setSuccess(true);
-                  if (planIntent) {
-                    localStorage.setItem("selectedPlan", planIntent);
-                    localStorage.setItem("subscriptionId", selectedPlanId);
-                    localStorage.removeItem("selectedPlanIntent");
-                  }
+                  localStorage.removeItem("selectedPlanIntent");
                   setTimeout(() => navigate("/create-webinar"), 2000);
                 }
               } catch (err) {

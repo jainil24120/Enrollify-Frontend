@@ -235,7 +235,7 @@ export const billingHistory = [
 
 export const plans = [
     {
-        name: "Starter",
+        name: "Basic",
         monthlyPrice: 699,
         yearlyPrice: 599 * 12,
         features: ["5 Lite Webinars", "Up to 100 Students", "Basic Analytics", "Standard Support"]
