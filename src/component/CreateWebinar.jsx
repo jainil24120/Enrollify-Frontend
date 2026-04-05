@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import "./CreateWebinar.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createWebinarAPI, updateWebinarAPI } from "../api/webinarApi";
+import { getClientSubscriptionAPI } from "../api/clientApi";
 
 function CreateWebinar() {
 
@@ -13,6 +14,24 @@ function CreateWebinar() {
   const isEditMode = !!editData;
 
   const [errorMsg, setErrorMsg] = useState("");
+  const [subscriptionId, setSubscriptionId] = useState(null);
+
+  // Fetch active subscription from backend
+  useEffect(() => {
+    const fetchSub = async () => {
+      try {
+        const data = await getClientSubscriptionAPI();
+        if (data?.subscription?._id) {
+          setSubscriptionId(data.subscription._id);
+        } else if (data?.subscription) {
+          setSubscriptionId(data.subscription);
+        }
+      } catch (err) {
+        console.error("Failed to fetch subscription:", err);
+      }
+    };
+    fetchSub();
+  }, []);
 
   const [formData, setFormData] = useState({
     title: editData?.title || "",
@@ -90,13 +109,13 @@ function CreateWebinar() {
     e.preventDefault();
     setErrorMsg("");
 
-    const subId = localStorage.getItem("subscriptionId");
     const token = localStorage.getItem("token") || "";
 
-    if (!subId) {
+    if (!subscriptionId) {
       setErrorMsg("No active subscription found. Please purchase a plan first.");
       return;
     }
+    const subId = subscriptionId;
 
     const finalData = {
       title: formData.title,
