@@ -39,6 +39,7 @@ function App() {
         <Route path="/dashboard" element={<ProtectedRoute><DashBoard /></ProtectedRoute>} />
         <Route path="/client-form" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
         <Route path="/create-webinar" element={<ProtectedRoute><CreateWebinar /></ProtectedRoute>} />
+        <Route path="/w/:slug" element={<TemplatePage />} />
         <Route path="/template" element={<TemplatePage />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

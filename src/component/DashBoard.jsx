@@ -9,6 +9,17 @@ import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI,
 import { API_BASE } from "../api/config.js";
 
 
+const generateZeroTrend = (days = 30) => {
+    const trend = [];
+    for (let i = days; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        trend.push({ date: dateStr, earnings: 0, views: 0, registrations: 0, tickets: 0 });
+    }
+    return trend;
+};
+
 const CustomRevenueTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         const val = payload[0].value || 0;
@@ -509,7 +520,11 @@ const WebinarsSection = ({ webinarSearch, setWebinarSearch, webinarFilter, setWe
                                 <div className="price-tag">₹{webinar.price || 0}</div>
                             </div>
                             <div className="card-actions">
-                                <button className="action-btn" onClick={() => handleCopyLink(webinar.id || webinar._id)}>
+                                <button className="action-btn" onClick={() => {
+                                    const url = webinar.slug ? `${window.location.origin}/w/${webinar.slug}` : "";
+                                    if (url) navigator.clipboard.writeText(url);
+                                    handleCopyLink(webinar.id || webinar._id);
+                                }}>
                                     {copiedId === (webinar.id || webinar._id) ? <span className="text-green text-xs">Copied!</span> : <Link size={16} />}
                                 </button>
                                 <button className="action-btn" onClick={() => navigate("/create-webinar", { state: { webinarToEdit: webinar } })}>
@@ -1264,23 +1279,6 @@ const DashBoard = () => {
             }
         }
         return [];
-    };
-
-    const generateZeroTrend = (days = 30) => {
-        const trend = [];
-        for (let i = days; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-            trend.push({
-                date: dateStr,
-                earnings: 0,
-                views: 0,
-                registrations: 0,
-                tickets: 0
-            });
-        }
-        return trend;
     };
 
     useEffect(() => {

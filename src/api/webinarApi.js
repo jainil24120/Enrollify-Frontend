@@ -19,14 +19,12 @@ export const createWebinarAPI = async (webinarData, token) => {
   const fieldsToSend = { ...webinarData };
   delete fieldsToSend.bannerImageFile;
 
-  // Categories needs to be sent as JSON array
-  if (Array.isArray(fieldsToSend.categories)) {
-    fieldsToSend.categories.forEach(cat => formData.append("categories", cat));
-    delete fieldsToSend.categories;
-  }
-
   for (const [key, value] of Object.entries(fieldsToSend)) {
-    if (value !== undefined && value !== null && value !== "") {
+    if (value === undefined || value === null || value === "") continue;
+    // Stringify arrays and objects for FormData
+    if (typeof value === "object") {
+      formData.append(key, JSON.stringify(value));
+    } else {
       formData.append(key, value);
     }
   }
@@ -64,13 +62,11 @@ export const updateWebinarAPI = async (id, webinarData, token) => {
   const fieldsToSend = { ...webinarData };
   delete fieldsToSend.bannerImageFile;
 
-  if (Array.isArray(fieldsToSend.categories)) {
-    fieldsToSend.categories.forEach(cat => formData.append("categories", cat));
-    delete fieldsToSend.categories;
-  }
-
   for (const [key, value] of Object.entries(fieldsToSend)) {
-    if (value !== undefined && value !== null && value !== "") {
+    if (value === undefined || value === null || value === "") continue;
+    if (typeof value === "object") {
+      formData.append(key, JSON.stringify(value));
+    } else {
       formData.append(key, value);
     }
   }

@@ -1,29 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle2, Star, Users, Calendar, Clock, Globe, Laptop, Gift, ArrowRight, Instagram, Youtube, Award } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { CheckCircle2, Star, Users, Calendar, Clock, Globe, Laptop, Gift, ArrowRight, Instagram, Youtube, Linkedin, Twitter, ExternalLink, ChevronDown, ChevronUp, Target, BookOpen, HelpCircle, List } from "lucide-react";
+import { API_BASE } from "../api/config.js";
 import "./TemplatePage.css";
 
 function TemplatePage() {
   const navigate = useNavigate();
-  const [data] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem("webinarData"));
-    const defaultData = {
-      title: "Social Media Marketing Mastery",
-      subtitle: "Unlock the knowledge to scale your business",
-      description: "Learn the secrets of the gods of marketing. This comprehensive guide will take you through the fastest ways to grow your audience and protect your brand's reputation online.",
-      categories: ["Marketing", "Business", "Finance"],
-      webinarDateTime: "2026-03-22T10:00",
-      durationMinutes: "120",
-      capacity: "130,000",
-      language: "English",
-      price: "99",
-      originalPrice: "999",
-      registrationsEnd: "18 MAR"
-    };
-    return savedData || defaultData;
-  });
-
+  const { slug } = useParams();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
+
+  useEffect(() => {
+    const fetchWebinar = async () => {
+      try {
+        if (slug) {
+          const res = await fetch(`${API_BASE}/api/webinars/s/${slug}`);
+          if (res.ok) {
+            const webinar = await res.json();
+            setData(webinar);
+          } else {
+            setError("Webinar not found");
+          }
+        }
+      } catch (err) {
+        setError("Failed to load webinar");
+      }
+      setLoading(false);
+    };
+    fetchWebinar();
+  }, [slug]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 300);
@@ -31,215 +39,168 @@ function TemplatePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Countdown timer
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
+  useEffect(() => {
+    if (!data?.webinarDateTime) return;
+    const target = new Date(data.registrationDeadline || data.webinarDateTime).getTime();
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = target - now;
+      if (diff <= 0) { clearInterval(interval); return; }
+      setCountdown({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        mins: Math.floor((diff % 3600000) / 60000),
+        secs: Math.floor((diff % 60000) / 1000),
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [data]);
+
+  if (loading) {
+    return (
+      <div className="v2-template-wrapper" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <div style={{ fontSize: "40px", marginBottom: "16px" }}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="v2-template-wrapper" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <h1 style={{ fontSize: "64px", marginBottom: "16px" }}>404</h1>
+          <p style={{ color: "#94a3b8", fontSize: "18px" }}>{error || "Webinar not found"}</p>
+        </div>
+      </div>
+    );
+  }
+
   const {
-    title,
-    subtitle,
-    description,
-    categories = [],
-    webinarDateTime,
-    durationMinutes,
-    capacity,
-    language,
-    price = "99",
-    registrationsEnd = "18 MAR",
-    bannerImage,
-    meetingLink
+    title, subtitle, description, categories = [],
+    webinarDateTime, durationMinutes, language, maxSeats,
+    price = 0, originalPrice = 0, registrationDeadline,
+    bannerImage, meetingLink, speakerName, speakerBio,
+    speakerImage, speakerSocials = {},
+    learningOutcomes = [], targetAudience = [],
+    faqs = [], agenda = [], testimonials = [],
+    ctaText, bonusText, trustLogos = [],
+    registrationCount = 0, _id,
   } = data;
 
-  const primaryCategory = categories[0] || "Marketing";
-  
-  const defaultTestimonials = [
-    { name: "DR. SUBHASH CHANDRA", role: "CHAIRMAN EMERITUS | ZEE", text: "The training was transformative. He not only sharpened our public speaking skills but also helped us let go.", img: "https://i.pravatar.cc/150?u=subhash" },
-    { name: "MR. MANISH SHUKLA", role: "GENERAL MANAGER | ONGC", text: "It was a very introspective session... really an eyeopener.", img: "https://i.pravatar.cc/150?u=manish" },
-    { name: "MR. FREDERIC CAHAREL", role: "PARTNER | KPMG UK", text: "Helped us understand what leadership really means in a global context.", img: "https://i.pravatar.cc/150?u=frederic" }
-  ];
+  const isFree = price === 0;
+  const displayImage = speakerImage || bannerImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80";
+  const ctaLabel = ctaText || (isFree ? "Register for FREE" : `Register Now at ₹${price}/-`);
+  const deadlineText = registrationDeadline
+    ? new Date(registrationDeadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    : webinarDateTime
+      ? new Date(new Date(webinarDateTime).getTime() - 86400000).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+      : "";
 
-  const contentMap = {
-    "Marketing": {
-      outcomes: [
-        "Influence outcomes in meetings and high-stakes conversations",
-        "Speak with clarity, claim authority, and presence",
-        "Build Confidence and fluency in your professional domain",
-        "Communicate confidently in front of Senior Leaders"
-      ],
-      testimonials: defaultTestimonials
-    },
-    "Business": {
-      outcomes: [
-        "Develop strategic thinking for business growth",
-        "Master negotiation and deal-closing techniques",
-        "Build and scale high-performance teams",
-        "Create sustainable competitive advantages"
-      ],
-      testimonials: defaultTestimonials
-    },
-    "Technology": {
-      outcomes: [
-        "Stay ahead with emerging tech trends and tools",
-        "Build scalable and production-ready applications",
-        "Master modern development workflows and best practices",
-        "Solve complex technical challenges with confidence"
-      ],
-      testimonials: defaultTestimonials
-    },
-    "Finance": {
-      outcomes: [
-        "Understand financial markets and investment strategies",
-        "Master budgeting, forecasting, and financial planning",
-        "Build wealth through smart financial decisions",
-        "Navigate risk management and portfolio diversification"
-      ],
-      testimonials: defaultTestimonials
-    },
-    "Startup": {
-      outcomes: [
-        "Validate your startup idea and find product-market fit",
-        "Build an MVP and launch with limited resources",
-        "Master fundraising and investor pitching",
-        "Scale operations from zero to growth stage"
-      ],
-      testimonials: defaultTestimonials
-    },
-    "Design": {
-      outcomes: [
-        "Create user-centric designs that convert",
-        "Master modern design tools and workflows",
-        "Build consistent and scalable design systems",
-        "Communicate design decisions with stakeholders"
-      ],
-      testimonials: defaultTestimonials
-    },
-    "Health": {
-      outcomes: [
-        "Understand holistic approaches to wellness",
-        "Build sustainable healthy habits and routines",
-        "Master stress management and mental resilience",
-        "Navigate the latest health and nutrition science"
-      ],
-      testimonials: defaultTestimonials
-    },
-    "Education": {
-      outcomes: [
-        "Master effective teaching and facilitation techniques",
-        "Design engaging and impactful curriculum",
-        "Leverage technology for better learning outcomes",
-        "Build communities of engaged learners"
-      ],
-      testimonials: defaultTestimonials
-    },
+  const handleRegister = () => {
+    // Store webinar ID for registration
+    localStorage.setItem("currentWebinarId", _id);
+    localStorage.setItem("webinarData", JSON.stringify(data));
+    navigate("/register");
   };
-
-  // Fallback for banner image if not provided
-  const displayImage = bannerImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80";
-
-  const currentContent = contentMap[primaryCategory] || contentMap["Marketing"];
-  const learningOutcomes = currentContent.outcomes;
-  const testimonials = currentContent.testimonials;
-
-  const logos = [
-    { name: "Google", url: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
-    { name: "IBM", url: "https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" },
-    { name: "Goldman Sachs", url: "https://upload.wikimedia.org/wikipedia/commons/1/12/Goldman_Sachs_logo.svg" },
-    { name: "Deloitte", url: "https://upload.wikimedia.org/wikipedia/commons/2/2b/Deloitte.svg" },
-    { name: "KPMG", url: "https://upload.wikimedia.org/wikipedia/commons/9/9d/KPMG_logo.svg" }
-  ];
 
   return (
     <div className="v2-template-wrapper">
-      {/* Top Floating Badge */}
+
+      {/* Floating Header */}
       <div className="v2-floating-header">
         <div className="v2-badge-box">
           <span className="v2-badge-main">{title}</span>
-          <span className="v2-badge-sub">{Math.floor(durationMinutes/60)}-Hour Exclusive Workshop</span>
+          <span className="v2-badge-sub">{Math.floor(durationMinutes / 60)}-Hour {isFree ? "Free" : "Exclusive"} Workshop</span>
         </div>
       </div>
 
+      {/* Hero Section */}
       <div className="v2-hero-section">
-        <p className="v2-participants-count">
-          <strong>{capacity}+ Reserved Seats</strong> Join our global community of learners
-        </p>
-        
-        <h1 className="v2-main-title">
-          {title}
-        </h1>
+        {registrationCount > 0 && (
+          <p className="v2-participants-count">
+            <strong>{registrationCount}+ Registered</strong> Join our growing community
+          </p>
+        )}
 
-        <p className="v2-subtitle">
-          {subtitle || description.substring(0, 150) + "..."}
-        </p>
+        <h1 className="v2-main-title">{title}</h1>
+        <p className="v2-subtitle">{subtitle || (description && description.substring(0, 150) + "...")}</p>
 
         <div className="v2-hero-grid">
-          {/* Left: Banner Image / Speaker Image */}
+          {/* Left: Speaker */}
           <div className="v2-speaker-container">
             <div className="v2-speaker-circle dynamic-banner-container">
-              <img src={displayImage} alt="Webinar Banner" className="v2-speaker-img dynamic-banner-img" />
-              
-              {/* Conditional Social overlays - only if it looks like a person */}
-              {!bannerImage && (
-                <>
-                  <div className="v2-social-card v2-insta">
-                    <Instagram size={16} className="v2-icon-insta" />
-                    <div className="v2-social-info">
-                      <span className="v2-handle">expert_session <Award size={12}/></span>
-                      <span className="v2-stats">1.1M followers</span>
-                    </div>
+              <img src={displayImage} alt={speakerName || "Speaker"} className="v2-speaker-img dynamic-banner-img" />
+
+              {/* Social cards */}
+              {speakerSocials?.instagram && (
+                <a href={speakerSocials.instagram} target="_blank" rel="noopener noreferrer" className="v2-social-card v2-insta">
+                  <Instagram size={16} className="v2-icon-insta" />
+                  <div className="v2-social-info">
+                    <span className="v2-handle">Instagram</span>
                   </div>
-                  <div className="v2-social-card v2-yt">
-                    <Youtube size={16} className="v2-icon-yt" />
-                    <div className="v2-social-info">
-                      <span className="v2-handle">Masterclass <CheckCircle2 size={12}/></span>
-                      <span className="v2-stats">435K subscribers</span>
-                    </div>
+                </a>
+              )}
+              {speakerSocials?.youtube && (
+                <a href={speakerSocials.youtube} target="_blank" rel="noopener noreferrer" className="v2-social-card v2-yt">
+                  <Youtube size={16} className="v2-icon-yt" />
+                  <div className="v2-social-info">
+                    <span className="v2-handle">YouTube</span>
                   </div>
-                </>
+                </a>
               )}
 
               <div className="v2-speaker-badge">
-                <span className="v2-name">Workshop Host</span>
-                <span className="v2-achievements">Industry Expert</span>
+                <span className="v2-name">{speakerName || "Workshop Host"}</span>
+                {speakerBio && <span className="v2-achievements">{speakerBio.substring(0, 80)}</span>}
                 <span className="v2-role">{categories.join(" | ")}</span>
               </div>
             </div>
-            
+
+            {/* Social Links Row */}
+            {(speakerSocials?.linkedin || speakerSocials?.twitter || speakerSocials?.website) && (
+              <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "12px", flexWrap: "wrap" }}>
+                {speakerSocials.linkedin && <a href={speakerSocials.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: "#0077b5", display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", textDecoration: "none" }}><Linkedin size={16} /> LinkedIn</a>}
+                {speakerSocials.twitter && <a href={speakerSocials.twitter} target="_blank" rel="noopener noreferrer" style={{ color: "#1da1f2", display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", textDecoration: "none" }}><Twitter size={16} /> Twitter</a>}
+                {speakerSocials.website && <a href={speakerSocials.website} target="_blank" rel="noopener noreferrer" style={{ color: "#00c6ff", display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", textDecoration: "none" }}><ExternalLink size={16} /> Website</a>}
+              </div>
+            )}
+
             <div className="v2-trust-row">
               <div className="v2-stars">
-                <Star size={16} fill="#fbbf24" color="#fbbf24"/>
-                <Star size={16} fill="#fbbf24" color="#fbbf24"/>
-                <Star size={16} fill="#fbbf24" color="#fbbf24"/>
-                <Star size={16} fill="#fbbf24" color="#fbbf24"/>
-                <Star size={16} fill="#fbbf24" color="#fbbf24"/>
-                <span>4.7/5 Trusted by {capacity}+ Students</span>
+                {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="#fbbf24" color="#fbbf24" />)}
+                <span>Trusted by {registrationCount || "100"}+ Students</span>
               </div>
             </div>
           </div>
 
-          {/* Right: Details & Registration */}
+          {/* Right: Details */}
           <div className="v2-details-container">
             <h3 className="v2-details-title">Webinar Details</h3>
-            
+
             <div className="v2-details-grid">
               <div className="v2-detail-box">
                 <Calendar className="v2-detail-icon" />
                 <div>
                   <label>Date</label>
-                  <strong>{webinarDateTime ? new Date(webinarDateTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "TBD"}</strong>
+                  <strong>{webinarDateTime ? new Date(webinarDateTime).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "TBD"}</strong>
                 </div>
               </div>
               <div className="v2-detail-box">
                 <Clock className="v2-detail-icon" />
                 <div>
                   <label>Time</label>
-                  <strong>{webinarDateTime ? new Date(webinarDateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : "TBD"}</strong>
+                  <strong>{webinarDateTime ? new Date(webinarDateTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "TBD"}</strong>
                 </div>
               </div>
               <div className="v2-detail-box">
                 <Laptop className="v2-detail-icon" />
                 <div>
-                  <label>Workshop</label>
-                  {meetingLink ? (
-                    <a href={meetingLink} target="_blank" rel="noopener noreferrer" className="meeting-link-text">Join Meeting 🔗</a>
-                  ) : (
-                    <strong>Online Session</strong>
-                  )}
+                  <label>Format</label>
+                  <strong>Online Session</strong>
                 </div>
               </div>
               <div className="v2-detail-box">
@@ -250,93 +211,204 @@ function TemplatePage() {
                 </div>
               </div>
               <div className="v2-detail-box v2-price-box">
-                <div className="v2-detail-icon price-icon">{price === "0" || price === 0 ? "★" : "₹"}</div>
+                <div className="v2-detail-icon price-icon">{isFree ? "★" : "₹"}</div>
                 <div>
                   <label>Joining Fee</label>
-                  <strong>{price === "0" || price === 0 ? "FREE" : `₹${price}/-`}</strong>
+                  <strong>
+                    {isFree ? "FREE" : `₹${price}/-`}
+                    {originalPrice > price && <span className="v2-strike" style={{ marginLeft: "8px", textDecoration: "line-through", color: "#94a3b8", fontSize: "14px" }}>₹{originalPrice}</span>}
+                  </strong>
                 </div>
               </div>
+              {maxSeats && (
+                <div className="v2-detail-box">
+                  <Users className="v2-detail-icon" />
+                  <div>
+                    <label>Seats</label>
+                    <strong>{maxSeats - registrationCount > 0 ? `${maxSeats - registrationCount} left` : "Almost Full!"}</strong>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="v2-bonus-box">
-              <Gift size={20}/> <span>FREE Bonus: Course Materials Included</span>
-            </div>
+            {bonusText && (
+              <div className="v2-bonus-box">
+                <Gift size={20} /> <span>{bonusText}</span>
+              </div>
+            )}
 
-            <button className="v2-cta-button" onClick={() => navigate("/register")}>
-              {price === "0" || price === 0 ? "Register For FREE" : `Register Now at ₹${price}/-`}
-            </button>
-            <p className="v2-timer-text">Registrations End on <span className="text-red">{registrationsEnd}</span></p>
+            <button className="v2-cta-button" onClick={handleRegister}>{ctaLabel}</button>
+
+            {/* Countdown Timer */}
+            {(countdown.days > 0 || countdown.hours > 0 || countdown.mins > 0) && (
+              <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "16px" }}>
+                {[{ val: countdown.days, label: "Days" }, { val: countdown.hours, label: "Hours" }, { val: countdown.mins, label: "Mins" }, { val: countdown.secs, label: "Secs" }].map((t, i) => (
+                  <div key={i} style={{ textAlign: "center", background: "rgba(0,0,0,0.3)", padding: "8px 14px", borderRadius: "8px", minWidth: "55px" }}>
+                    <div style={{ fontSize: "22px", fontWeight: "800", color: "#00c6ff" }}>{String(t.val).padStart(2, "0")}</div>
+                    <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase" }}>{t.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {deadlineText && <p className="v2-timer-text">Registrations close <span className="text-red">{deadlineText}</span></p>}
           </div>
         </div>
       </div>
 
-      {/* About Section (Description) */}
+      {/* About Section */}
       <div className="v2-about-section">
         <div className="v2-about-container">
           <h2>About this Webinar</h2>
-          <p className="v2-description-text">{description}</p>
+          <p className="v2-description-text" style={{ whiteSpace: "pre-line" }}>{description}</p>
         </div>
       </div>
 
-      {/* Learning Outcomes Section */}
-      <div className="v2-outcomes-section">
-        <h2>In this workshop, you'll learn:</h2>
-        <div className="v2-outcomes-list">
-          {learningOutcomes.map((item, i) => (
-            <div key={i} className="v2-outcome-item">
-              <CheckCircle2 size={24} className="v2-check-icon"/>
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Corporate Trust Section */}
-      <div className="v2-corporate-section">
-        <h2>Trained Professionals from Top Companies Including</h2>
-        <div className="v2-logo-grid">
-          {logos.map((logo, i) => (
-            <div key={i} className="v2-logo-card">
-              <img src={logo.url} alt={logo.name} />
-            </div>
-          ))}
-        </div>
-        <button className="v2-secondary-cta" onClick={() => navigate("/register")}>
-          {price === "0" || price === 0 ? "Claim Your FREE Seat Now" : `Register Now for ₹${price}/- Only`}
-        </button>
-      </div>
-
-      {/* Testimonials Section */}
-      <div className="v2-testimonials-section">
-        <h2>WHAT STUDENTS ARE SAYING</h2>
-        <div className="v2-testimonials-grid">
-          {testimonials.map((t, i) => (
-            <div key={i} className="v2-testimonial-card">
-              <div className="v2-quote-icon">“</div>
-              <p className="v2-testimonial-text">{t.text}</p>
-              <div className="v2-testimonial-author">
-                <img src={t.img} alt={t.name} />
-                <div className="v2-author-info">
-                  <strong>{t.name}</strong>
-                  <span>{t.role}</span>
-                </div>
+      {/* Speaker Bio Section */}
+      {speakerName && speakerBio && (
+        <div className="v2-about-section" style={{ background: "rgba(0,198,255,0.03)" }}>
+          <div className="v2-about-container">
+            <h2>Meet Your Host</h2>
+            <div style={{ display: "flex", gap: "24px", alignItems: "flex-start", flexWrap: "wrap" }}>
+              {(speakerImage || bannerImage) && (
+                <img src={speakerImage || bannerImage} alt={speakerName} style={{ width: "120px", height: "120px", borderRadius: "50%", objectFit: "cover", border: "3px solid rgba(0,198,255,0.3)" }} />
+              )}
+              <div style={{ flex: 1, minWidth: "250px" }}>
+                <h3 style={{ fontSize: "22px", marginBottom: "8px", color: "white" }}>{speakerName}</h3>
+                <p style={{ color: "#cbd5e1", lineHeight: "1.7", whiteSpace: "pre-line" }}>{speakerBio}</p>
               </div>
             </div>
-          ))}
+          </div>
         </div>
+      )}
+
+      {/* Target Audience */}
+      {targetAudience.length > 0 && (
+        <div className="v2-outcomes-section">
+          <h2><Target size={24} style={{ verticalAlign: "middle", marginRight: "8px" }} />Who Is This For?</h2>
+          <div className="v2-outcomes-list">
+            {targetAudience.map((item, i) => (
+              <div key={i} className="v2-outcome-item">
+                <CheckCircle2 size={24} className="v2-check-icon" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Learning Outcomes */}
+      {learningOutcomes.length > 0 && (
+        <div className="v2-outcomes-section">
+          <h2><BookOpen size={24} style={{ verticalAlign: "middle", marginRight: "8px" }} />What You'll Learn</h2>
+          <div className="v2-outcomes-list">
+            {learningOutcomes.map((item, i) => (
+              <div key={i} className="v2-outcome-item">
+                <CheckCircle2 size={24} className="v2-check-icon" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Agenda */}
+      {agenda.length > 0 && (
+        <div className="v2-about-section">
+          <div className="v2-about-container">
+            <h2><List size={24} style={{ verticalAlign: "middle", marginRight: "8px" }} />Session Agenda</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+              {agenda.map((item, i) => (
+                <div key={i} style={{ display: "flex", gap: "16px", padding: "16px 0", borderBottom: i < agenda.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+                  <div style={{ minWidth: "100px", color: "#00c6ff", fontWeight: "700", fontSize: "14px" }}>{item.time}</div>
+                  <div style={{ color: "#e2e8f0", fontSize: "15px" }}>{item.topic}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trust Section */}
+      {trustLogos.length > 0 && (
+        <div className="v2-corporate-section">
+          <h2>Trusted by Professionals from</h2>
+          <div className="v2-logo-grid">
+            {trustLogos.map((name, i) => (
+              <div key={i} className="v2-logo-card" style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "700", color: "#cbd5e1", letterSpacing: "1px" }}>
+                {name}
+              </div>
+            ))}
+          </div>
+          <button className="v2-secondary-cta" onClick={handleRegister}>{ctaLabel}</button>
+        </div>
+      )}
+
+      {/* Testimonials */}
+      {testimonials.length > 0 && (
+        <div className="v2-testimonials-section">
+          <h2>WHAT ATTENDEES SAY</h2>
+          <div className="v2-testimonials-grid">
+            {testimonials.map((t, i) => (
+              <div key={i} className="v2-testimonial-card">
+                <div className="v2-quote-icon">"</div>
+                <p className="v2-testimonial-text">{t.text}</p>
+                <div className="v2-testimonial-author">
+                  {t.image ? <img src={t.image} alt={t.name} /> : <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "linear-gradient(135deg, #00c6ff, #3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "18px" }}>{t.name?.charAt(0)}</div>}
+                  <div className="v2-author-info">
+                    <strong>{t.name}</strong>
+                    <span>{t.role}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* FAQ */}
+      {faqs.length > 0 && (
+        <div className="v2-about-section">
+          <div className="v2-about-container">
+            <h2><HelpCircle size={24} style={{ verticalAlign: "middle", marginRight: "8px" }} />Frequently Asked Questions</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {faqs.map((faq, i) => (
+                <div key={i} style={{ background: "rgba(255,255,255,0.04)", borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "none", border: "none", color: "white", cursor: "pointer", textAlign: "left", fontSize: "15px", fontWeight: "600" }}
+                  >
+                    {faq.question}
+                    {openFaq === i ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
+                  {openFaq === i && (
+                    <div style={{ padding: "0 20px 16px", color: "#cbd5e1", lineHeight: "1.7", fontSize: "14px" }}>
+                      {faq.answer}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Final CTA */}
+      <div className="v2-corporate-section" style={{ paddingTop: "40px" }}>
+        <h2>{isFree ? "Don't Miss This FREE Session!" : `Enroll Now for Just ₹${price}/-`}</h2>
+        {originalPrice > price && <p style={{ color: "#94a3b8", fontSize: "18px", marginBottom: "16px" }}>Regular Price: <span style={{ textDecoration: "line-through" }}>₹{originalPrice}</span></p>}
+        <button className="v2-secondary-cta" onClick={handleRegister} style={{ fontSize: "18px", padding: "18px 48px" }}>{ctaLabel}</button>
       </div>
 
-      {/* Sticky Urgency Bar */}
-      <div className={`v2-sticky-bar ${scrolled ? 'visible' : ''}`}>
+      {/* Sticky Bar */}
+      <div className={`v2-sticky-bar ${scrolled ? "visible" : ""}`}>
         <div className="v2-sticky-content">
           <div className="v2-urgency-info">
-            <span className="v2-urgency-main text-red">Almost Full</span>
-            <span className="v2-urgency-sub">Selling Fast!</span>
-            <span className="v2-urgency-timer">Ends on <strong>{registrationsEnd}</strong></span>
+            {maxSeats && registrationCount >= maxSeats * 0.7 && <span className="v2-urgency-main text-red">Almost Full</span>}
+            <span className="v2-urgency-sub">{isFree ? "Free Workshop" : `₹${price}/-`}</span>
+            {deadlineText && <span className="v2-urgency-timer">Closes <strong>{deadlineText}</strong></span>}
           </div>
-          <button className="v2-sticky-cta" onClick={() => navigate("/register")}>
-            {price === "0" || price === 0 ? "Register for FREE" : `Register for ₹${price}/-`}
-          </button>
+          <button className="v2-sticky-cta" onClick={handleRegister}>{ctaLabel}</button>
         </div>
       </div>
     </div>
