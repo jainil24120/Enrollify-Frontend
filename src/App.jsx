@@ -7,30 +7,50 @@ import DashBoard from "./component/DashBoard";
 import ClientForm from "./component/ClientForm";
 import CreateWebinar from "./component/CreateWebinar";
 import TemplatePage from "./component/TemplatePage";
+import SubdomainPage from "./component/SubdomainPage";
 import AdminDashboard from "./component/AdminDashboard";
 import AdminLogin from "./component/AdminLogin";
 import UserForm from "./component/UserForm";
 
-// Protected route for authenticated clients
+// Detect subdomain: yoga.enrollify.xyz → "yoga"
+const getSubdomain = () => {
+  const host = window.location.hostname;
+  // Match *.enrollify.xyz or *.enrollify.com
+  const match = host.match(/^([a-z0-9-]+)\.enrollify\.(xyz|com)$/i);
+  if (match && match[1] !== "www") return match[1];
+  return null;
+};
+
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
-  if (!token) {
-    return <Navigate to="/signup" replace />;
-  }
+  if (!token) return <Navigate to="/signup" replace />;
   return children;
 };
 
-// Protected route for admin
 const AdminRoute = ({ children }) => {
   const isAdmin = localStorage.getItem("isAdminAuth") === "true";
   const token = localStorage.getItem("token");
-  if (!isAdmin || !token) {
-    return <Navigate to="/admin" replace />;
-  }
+  if (!isAdmin || !token) return <Navigate to="/admin" replace />;
   return children;
 };
 
 function App() {
+  const subdomain = getSubdomain();
+
+  // If accessing via subdomain (e.g. yoga.enrollify.xyz), show client's webinar page
+  if (subdomain) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/w/:slug" element={<TemplatePage />} />
+          <Route path="/register" element={<UserForm />} />
+          <Route path="*" element={<SubdomainPage subdomain={subdomain} />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // Main app (enrollify.xyz)
   return (
     <BrowserRouter>
       <Routes>
