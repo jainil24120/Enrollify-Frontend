@@ -511,10 +511,10 @@ const WebinarsSection = ({ webinarSearch, setWebinarSearch, webinarFilter, setWe
                                 <div className="webinar-mini-stats">
                                     <div className="stats-text-row">
                                         <span>Registrations</span>
-                                        <span className="seats-count">{webinar.enrollments || webinar.registrations || 0}/{webinar.totalSeats || 100} Seats</span>
+                                        <span className="seats-count">{webinar.enrollments || webinar.registrations || 0}/{webinar.maxSeats || webinar.totalSeats || "∞"} Seats</span>
                                     </div>
                                     <div className="progress-bar-bg small">
-                                        <div className={`progress-fill neon-blue`} style={{ width: `${((webinar.enrollments || 0) / (webinar.totalSeats || 100)) * 100}%` }}></div>
+                                        <div className={`progress-fill neon-blue`} style={{ width: `${((webinar.enrollments || 0) / (webinar.maxSeats || webinar.totalSeats || 100)) * 100}%` }}></div>
                                     </div>
                                 </div>
                                 <div className="price-tag">₹{webinar.price || 0}</div>
