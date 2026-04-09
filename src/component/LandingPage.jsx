@@ -10,6 +10,7 @@ import webinarImg from "../assets/webinar.png";
 import cardImg from "../assets/card.png";
 import socialImg from "../assets/social.png";
 import graphImg from "../assets/graph.png";
+import logoImg from "../assets/Logo.jpeg";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -100,7 +101,7 @@ const LandingPage = () => {
       {/* ===== NAVBAR ===== */}
       <nav className="nav3">
         <div className="logo3">
-          <div className="logo-mark3">E</div>
+          <img src={logoImg} alt="Enrollify" className="logo-img3" />
           <span>Enrollify</span>
         </div>
         <ul className={`nav-links3 ${mobileMenu ? "open" : ""}`}>
@@ -404,7 +405,7 @@ const LandingPage = () => {
       <footer className="footer3">
         <div className="footer-inner3">
           <div className="f-col3">
-            <div className="f-logo"><div className="logo-mark3">E</div><span>Enrollify</span></div>
+            <div className="f-logo"><img src={logoImg} alt="Enrollify" className="logo-img3" /><span>Enrollify</span></div>
             <p>The premium platform for creators who are serious about growing their webinar business.</p>
           </div>
           <div className="f-col3">

@@ -5,6 +5,7 @@ import "./CreateWebinar.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createWebinarAPI, updateWebinarAPI } from "../api/webinarApi";
 import { getClientSubscriptionAPI } from "../api/clientApi";
+import { fetchMyTierTemplates } from "../api/templateApi";
 
 function CreateWebinar() {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ function CreateWebinar() {
   const [subscriptionId, setSubscriptionId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [createdUrl, setCreatedUrl] = useState("");
+  const [availableTemplates, setAvailableTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState(editData?.template?._id || editData?.template || null);
 
   useEffect(() => {
     const fetchSub = async () => {
@@ -27,7 +30,21 @@ function CreateWebinar() {
         console.error("Failed to fetch subscription:", err);
       }
     };
+    const fetchTemplates = async () => {
+      try {
+        const templates = await fetchMyTierTemplates();
+        setAvailableTemplates(Array.isArray(templates) ? templates : templates.data || []);
+        // Auto-select default template if none selected
+        if (!selectedTemplate) {
+          const defaultT = (Array.isArray(templates) ? templates : templates.data || []).find(t => t.isDefault);
+          if (defaultT) setSelectedTemplate(defaultT._id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch templates:", err);
+      }
+    };
     fetchSub();
+    fetchTemplates();
   }, []);
 
   const [formData, setFormData] = useState({
@@ -144,6 +161,7 @@ function CreateWebinar() {
       subscriptionId,
       subscription: subscriptionId,
       subscription_id: subscriptionId,
+      templateId: selectedTemplate || undefined,
 
       // Speaker
       speakerName: formData.speakerName,
@@ -211,20 +229,20 @@ function CreateWebinar() {
         <div className="form-card" style={{ textAlign: "center", padding: "60px 40px" }}>
           <h1 style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</h1>
           <h2 style={{ marginBottom: "12px" }}>Webinar {isEditMode ? "Updated" : "Created"} Successfully!</h2>
-          <p style={{ color: "#94a3b8", marginBottom: "24px" }}>Your webinar landing page is live at:</p>
-          <div style={{ background: "rgba(0,198,255,0.1)", border: "1px solid rgba(0,198,255,0.3)", borderRadius: "12px", padding: "16px", marginBottom: "24px", wordBreak: "break-all" }}>
-            <a href={createdUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#00c6ff", fontSize: "18px", fontWeight: "600", textDecoration: "none" }}>
+          <p style={{ color: "#6b7280", marginBottom: "24px" }}>Your webinar landing page is live at:</p>
+          <div style={{ background: "rgba(101,116,233,0.1)", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "12px", padding: "16px", marginBottom: "24px", wordBreak: "break-all" }}>
+            <a href={createdUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#6574e9", fontSize: "18px", fontWeight: "600", textDecoration: "none" }}>
               {createdUrl}
             </a>
           </div>
           <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={() => { navigator.clipboard.writeText(createdUrl); }} style={{ padding: "12px 24px", background: "#3b82f6", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontWeight: "600" }}>
+            <button onClick={() => { navigator.clipboard.writeText(createdUrl); }} style={{ padding: "12px 24px", background: "#6574e9", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontWeight: "600" }}>
               Copy Link
             </button>
-            <button onClick={() => window.open(createdUrl, "_blank")} style={{ padding: "12px 24px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "8px", color: "white", cursor: "pointer", fontWeight: "600" }}>
+            <button onClick={() => window.open(createdUrl, "_blank")} style={{ padding: "12px 24px", background: "#e5e7eb", border: "1px solid #e5e7eb", borderRadius: "8px", color: "#1a1a35", cursor: "pointer", fontWeight: "600" }}>
               Preview Page
             </button>
-            <button onClick={() => navigate("/dashboard")} style={{ padding: "12px 24px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#94a3b8", cursor: "pointer", fontWeight: "600" }}>
+            <button onClick={() => navigate("/dashboard")} style={{ padding: "12px 24px", background: "#fafafa", border: "1px solid #e5e7eb", borderRadius: "8px", color: "#6b7280", cursor: "pointer", fontWeight: "600" }}>
               Go to Dashboard
             </button>
           </div>
@@ -245,9 +263,9 @@ function CreateWebinar() {
               onClick={() => setCurrentStep(s.num)}
               style={{
                 padding: "8px 20px", borderRadius: "20px", border: "1px solid",
-                borderColor: currentStep === s.num ? "#00c6ff" : "rgba(255,255,255,0.15)",
-                background: currentStep === s.num ? "rgba(0,198,255,0.15)" : "transparent",
-                color: currentStep === s.num ? "#00c6ff" : "#94a3b8",
+                borderColor: currentStep === s.num ? "#6574e9" : "#e5e7eb",
+                background: currentStep === s.num ? "rgba(101,116,233,0.15)" : "transparent",
+                color: currentStep === s.num ? "#6574e9" : "#6b7280",
                 cursor: "pointer", fontWeight: "600", fontSize: "13px",
               }}
             >
@@ -267,6 +285,36 @@ function CreateWebinar() {
           {/* ===== STEP 1: BASICS ===== */}
           {currentStep === 1 && (
             <>
+              {/* Template Picker */}
+              {availableTemplates.length > 0 && (
+                <>
+                  <h2>Choose Template</h2>
+                  <div style={{ display: "flex", gap: "14px", marginBottom: "28px", overflowX: "auto", paddingBottom: "8px" }}>
+                    {availableTemplates.map((t) => (
+                      <div
+                        key={t._id}
+                        onClick={() => setSelectedTemplate(t._id)}
+                        style={{
+                          minWidth: "160px", padding: "14px", borderRadius: "14px", cursor: "pointer",
+                          border: selectedTemplate === t._id ? "2px solid #6574e9" : "1px solid #e5e7eb",
+                          background: selectedTemplate === t._id ? "rgba(101,116,233,0.04)" : "#fafafa",
+                          textAlign: "center", transition: "all 0.2s ease",
+                        }}
+                      >
+                        {t.thumbnail ? (
+                          <img src={t.thumbnail} alt={t.name} style={{ width: "100%", height: "80px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }} />
+                        ) : (
+                          <div style={{ width: "100%", height: "80px", background: "#e5e7eb", borderRadius: "8px", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "0.8rem" }}>{t.name}</div>
+                        )}
+                        <div style={{ fontWeight: "600", fontSize: "0.88rem", color: "#1a1a35" }}>{t.name}</div>
+                        <div style={{ fontSize: "0.72rem", color: "#6b7280", textTransform: "uppercase", marginTop: "2px" }}>{t.minTier}</div>
+                        {selectedTemplate === t._id && <div style={{ fontSize: "0.72rem", color: "#6574e9", fontWeight: "600", marginTop: "4px" }}>Selected</div>}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
               <div className="grid">
                 <input name="title" value={formData.title} placeholder="Webinar Title *" required onChange={handleChange} />
                 <input name="subtitle" value={formData.subtitle} placeholder="Subtitle / Tagline" onChange={handleChange} />
@@ -310,7 +358,7 @@ function CreateWebinar() {
 
               <div className="grid">
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <label style={{ fontSize: "12px", color: "#94a3b8" }}>Banner Image {formData.bannerImageFile ? `(${formData.bannerImageFile.name})` : ""}</label>
+                  <label style={{ fontSize: "12px", color: "#6b7280" }}>Banner Image {formData.bannerImageFile ? `(${formData.bannerImageFile.name})` : ""}</label>
                   <input type="file" accept="image/*" onChange={(e) => { if (e.target.files[0]) setFormData({ ...formData, bannerImageFile: e.target.files[0], bannerImage: "" }); }} style={{ fontSize: "13px" }} />
                 </div>
                 <input name="meetingLink" value={formData.meetingLink} placeholder="Meeting Link (Zoom/Google Meet)" onChange={handleChange} />
@@ -355,7 +403,7 @@ function CreateWebinar() {
                   <button type="button" onClick={() => removeArrayItem("learningOutcomes", i)} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "none", borderRadius: "8px", cursor: "pointer" }}>X</button>
                 </div>
               ))}
-              <button type="button" onClick={() => addArrayItem("learningOutcomes", "")} style={{ padding: "8px 16px", background: "rgba(0,198,255,0.1)", color: "#00c6ff", border: "1px solid rgba(0,198,255,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Outcome</button>
+              <button type="button" onClick={() => addArrayItem("learningOutcomes", "")} style={{ padding: "8px 16px", background: "rgba(101,116,233,0.1)", color: "#6574e9", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Outcome</button>
 
               <h2>Target Audience</h2>
               {formData.targetAudience.map((item, i) => (
@@ -364,7 +412,7 @@ function CreateWebinar() {
                   <button type="button" onClick={() => removeArrayItem("targetAudience", i)} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "none", borderRadius: "8px", cursor: "pointer" }}>X</button>
                 </div>
               ))}
-              <button type="button" onClick={() => addArrayItem("targetAudience", "")} style={{ padding: "8px 16px", background: "rgba(0,198,255,0.1)", color: "#00c6ff", border: "1px solid rgba(0,198,255,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Audience</button>
+              <button type="button" onClick={() => addArrayItem("targetAudience", "")} style={{ padding: "8px 16px", background: "rgba(101,116,233,0.1)", color: "#6574e9", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Audience</button>
 
               <h2>Session Agenda</h2>
               {formData.agenda.map((item, i) => (
@@ -374,17 +422,17 @@ function CreateWebinar() {
                   <button type="button" onClick={() => removeArrayItem("agenda", i)} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "none", borderRadius: "8px", cursor: "pointer", width: "40px" }}>X</button>
                 </div>
               ))}
-              <button type="button" onClick={() => addArrayItem("agenda", { time: "", topic: "" })} style={{ padding: "8px 16px", background: "rgba(0,198,255,0.1)", color: "#00c6ff", border: "1px solid rgba(0,198,255,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Agenda Item</button>
+              <button type="button" onClick={() => addArrayItem("agenda", { time: "", topic: "" })} style={{ padding: "8px 16px", background: "rgba(101,116,233,0.1)", color: "#6574e9", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Agenda Item</button>
 
               <h2>FAQs</h2>
               {formData.faqs.map((item, i) => (
-                <div key={i} style={{ marginBottom: "12px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px" }}>
+                <div key={i} style={{ marginBottom: "12px", background: "#fafafa", padding: "12px", borderRadius: "8px" }}>
                   <input value={item.question} placeholder="Question" onChange={(e) => updateObjectArrayItem("faqs", i, "question", e.target.value)} style={{ marginBottom: "8px" }} />
                   <textarea value={item.answer} placeholder="Answer" onChange={(e) => updateObjectArrayItem("faqs", i, "answer", e.target.value)} rows={2} />
                   <button type="button" onClick={() => removeArrayItem("faqs", i)} style={{ padding: "4px 12px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", marginTop: "8px" }}>Remove</button>
                 </div>
               ))}
-              <button type="button" onClick={() => addArrayItem("faqs", { question: "", answer: "" })} style={{ padding: "8px 16px", background: "rgba(0,198,255,0.1)", color: "#00c6ff", border: "1px solid rgba(0,198,255,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add FAQ</button>
+              <button type="button" onClick={() => addArrayItem("faqs", { question: "", answer: "" })} style={{ padding: "8px 16px", background: "rgba(101,116,233,0.1)", color: "#6574e9", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add FAQ</button>
             </>
           )}
 
@@ -393,7 +441,7 @@ function CreateWebinar() {
             <>
               <h2>Testimonials</h2>
               {formData.testimonials.map((item, i) => (
-                <div key={i} style={{ marginBottom: "12px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px" }}>
+                <div key={i} style={{ marginBottom: "12px", background: "#fafafa", padding: "12px", borderRadius: "8px" }}>
                   <div className="grid">
                     <input value={item.name} placeholder="Name" onChange={(e) => updateObjectArrayItem("testimonials", i, "name", e.target.value)} />
                     <input value={item.role} placeholder="Role / Company" onChange={(e) => updateObjectArrayItem("testimonials", i, "role", e.target.value)} />
@@ -403,17 +451,17 @@ function CreateWebinar() {
                   <button type="button" onClick={() => removeArrayItem("testimonials", i)} style={{ padding: "4px 12px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", marginTop: "8px" }}>Remove</button>
                 </div>
               ))}
-              <button type="button" onClick={() => addArrayItem("testimonials", { name: "", role: "", text: "", image: "" })} style={{ padding: "8px 16px", background: "rgba(0,198,255,0.1)", color: "#00c6ff", border: "1px solid rgba(0,198,255,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Testimonial</button>
+              <button type="button" onClick={() => addArrayItem("testimonials", { name: "", role: "", text: "", image: "" })} style={{ padding: "8px 16px", background: "rgba(101,116,233,0.1)", color: "#6574e9", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Testimonial</button>
 
               <h2>Trust / Company Logos</h2>
-              <p style={{ color: "#94a3b8", fontSize: "13px", marginBottom: "12px" }}>Add company names whose employees have attended (e.g. Google, Microsoft)</p>
+              <p style={{ color: "#6b7280", fontSize: "13px", marginBottom: "12px" }}>Add company names whose employees have attended (e.g. Google, Microsoft)</p>
               {formData.trustLogos.map((item, i) => (
                 <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
                   <input value={item} placeholder="Company Name" onChange={(e) => updateArrayItem("trustLogos", i, e.target.value)} style={{ flex: 1 }} />
                   <button type="button" onClick={() => removeArrayItem("trustLogos", i)} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "none", borderRadius: "8px", cursor: "pointer" }}>X</button>
                 </div>
               ))}
-              <button type="button" onClick={() => addArrayItem("trustLogos", "")} style={{ padding: "8px 16px", background: "rgba(0,198,255,0.1)", color: "#00c6ff", border: "1px solid rgba(0,198,255,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Company</button>
+              <button type="button" onClick={() => addArrayItem("trustLogos", "")} style={{ padding: "8px 16px", background: "rgba(101,116,233,0.1)", color: "#6574e9", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}>+ Add Company</button>
 
               <h2>Customization</h2>
               <div className="grid">
@@ -427,19 +475,19 @@ function CreateWebinar() {
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: "24px", gap: "12px" }}>
             {currentStep > 1 && (
               <button type="button" onClick={() => setCurrentStep(currentStep - 1)}
-                style={{ padding: "14px 28px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "10px", color: "#94a3b8", cursor: "pointer", fontWeight: "600" }}>
+                style={{ padding: "14px 28px", background: "#fafafa", border: "1px solid #e5e7eb", borderRadius: "10px", color: "#6b7280", cursor: "pointer", fontWeight: "600" }}>
                 Back
               </button>
             )}
             <div style={{ marginLeft: "auto" }}>
               {currentStep < 4 ? (
                 <button type="button" onClick={() => setCurrentStep(currentStep + 1)}
-                  style={{ padding: "14px 28px", background: "linear-gradient(135deg, #00c6ff, #3b82f6)", border: "none", borderRadius: "10px", color: "white", cursor: "pointer", fontWeight: "600", fontSize: "15px" }}>
+                  style={{ padding: "14px 28px", background: "linear-gradient(135deg, #6574e9, #6574e9)", border: "none", borderRadius: "10px", color: "white", cursor: "pointer", fontWeight: "600", fontSize: "15px" }}>
                   Next Step
                 </button>
               ) : (
                 <button type="submit"
-                  style={{ padding: "14px 32px", background: "linear-gradient(135deg, #00c6ff, #0072ff)", border: "none", borderRadius: "10px", color: "white", cursor: "pointer", fontWeight: "700", fontSize: "16px" }}>
+                  style={{ padding: "14px 32px", background: "linear-gradient(135deg, #6574e9, #4f5cd4)", border: "none", borderRadius: "10px", color: "white", cursor: "pointer", fontWeight: "700", fontSize: "16px" }}>
                   {isEditMode ? "Update Webinar" : "Create Webinar"} 🚀
                 </button>
               )}

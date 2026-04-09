@@ -127,17 +127,11 @@ section { scroll-margin-top: 80px; }
   color: #1a1a35;
 }
 
-.logo-mark3 {
-  width: 34px; height: 34px;
+.logo-img3 {
+  width: 34px;
+  height: 34px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #6574e9, #a2aef7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 1rem;
-  color: white;
-  font-family: var(--font-accent, 'Syne', sans-serif);
+  object-fit: contain;
 }
 
 .nav-links3 {

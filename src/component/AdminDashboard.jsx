@@ -10,6 +10,10 @@ import {
   fetchAdminSubscriptions 
 } from "../api/adminApi";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import AdminTemplateManager from "./AdminTemplateManager";
+import logoImg from "../assets/Logo.jpeg";
+import { AVAILABLE_TEMPLATES } from "./templates/templateRegistry";
+import { fetchAllTemplates } from "../api/templateApi";
 import { IndianRupee, Users, Ticket, Crown, CheckCircle, Plus, Download, AlertCircle, Search, Filter, MoreVertical, X, User, ChevronLeft, ChevronRight, UserX, Unlock, LogOut, Video, Calendar, Eye, Activity, Ban, Settings, Key, Shield, Bell, Save, ToggleLeft, ToggleRight, Smartphone, Mail, CreditCard, Lock, BarChart3, TrendingUp, Globe, Monitor, Share2, MapPin, ClipboardList } from 'lucide-react';
 
 
@@ -25,6 +29,7 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [unregisteredCount, setUnregisteredCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [planFilter, setPlanFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -178,6 +183,12 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchAllData();
+    // Check for unregistered templates
+    fetchAllTemplates().then(dbTemplates => {
+      const registered = (Array.isArray(dbTemplates) ? dbTemplates : dbTemplates?.data || []).map(t => t.key);
+      const unregistered = AVAILABLE_TEMPLATES.filter(t => !registered.includes(t.key));
+      setUnregisteredCount(unregistered.length);
+    }).catch(() => {});
   }, [fetchAllData]);
 
   // Registrations State
@@ -299,15 +310,15 @@ const AdminDashboard = () => {
                     enrollments: i + 1,
                     signups: Math.round((i+1) * 0.8)
                   }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                    <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                    <RechartsTooltip 
-                      contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
-                      itemStyle={{ color: '#fff' }}
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                    <RechartsTooltip
+                      contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                      itemStyle={{ color: '#1a1a35' }}
                     />
                     <Line type="monotone" dataKey="signups" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 6 }} />
-                    <Line type="monotone" dataKey="enrollments" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6' }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="enrollments" stroke="#6574e9" strokeWidth={3} dot={{ r: 4, fill: '#6574e9' }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -336,10 +347,10 @@ const AdminDashboard = () => {
                       <tr key={creator.id}>
                         <td>
                           <div className="creator-cell">
-                            <div className="creator-avatar" style={{background: '#3b82f6'}}>{creator.userInfo?.avatar || 'C'}</div>
+                            <div className="creator-avatar" style={{background: '#6574e9'}}>{creator.userInfo?.avatar || 'C'}</div>
                             <div className="creator-details">
-                              <span className="creator-name">{creator.userInfo?.name}</span>
-                              <span className="creator-email">{creator.userInfo?.email}</span>
+                              <span className="creator-name">{(creator.userInfo?.name || '').trim()}</span>
+                              <span className="creator-email">{(creator.userInfo?.email || '').trim()}</span>
                             </div>
                           </div>
                         </td>
@@ -455,8 +466,8 @@ const AdminDashboard = () => {
                         <div className="creator-cell">
                           <div className="creator-avatar">{(reg.user?.firstname || reg.firstname || 'U')[0]}{(reg.user?.lastname || reg.lastname || ' ')[0]}</div>
                           <div className="creator-details">
-                            <span className="creator-name">{reg.user?.firstname || reg.firstname} {reg.user?.lastname || reg.lastname}</span>
-                            <span className="creator-email">{reg.user?.email || reg.email}</span>
+                            <span className="creator-name">{(reg.user?.firstname || reg.firstname || '').trim()} {(reg.user?.lastname || reg.lastname || '').trim()}</span>
+                            <span className="creator-email">{(reg.user?.email || reg.email || '').trim()}</span>
                           </div>
                         </div>
                       </td>
@@ -525,7 +536,7 @@ const AdminDashboard = () => {
                     <button className="close-btn" onClick={() => setSelectedRegistration(null)}><X size={20} /></button>
                   </div>
                   <div className="drawer-body">
-                    <div className="profile-hero p-20" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+                    <div className="profile-hero p-20" style={{ background: '#fafafa', borderRadius: '12px' }}>
                       <h4 className="m-0 mb-10 text-blue">Transaction ID: {selectedRegistration._id}</h4>
                       <div className="flex-between">
                         <span className="text-gray">Status:</span>
@@ -535,8 +546,8 @@ const AdminDashboard = () => {
 
                     <div className="profile-section mt-20">
                       <h4>User Info</h4>
-                      <div className="info-row"><span className="text-gray">Name:</span> <span className="text-white">{selectedRegistration.user?.firstname || selectedRegistration.firstname} {selectedRegistration.user?.lastname || selectedRegistration.lastname}</span></div>
-                      <div className="info-row"><span className="text-gray">Email:</span> <span className="text-white">{selectedRegistration.user?.email || selectedRegistration.email}</span></div>
+                      <div className="info-row"><span className="text-gray">Name:</span> <span className="text-white">{(selectedRegistration.user?.firstname || selectedRegistration.firstname || '').trim()} {(selectedRegistration.user?.lastname || selectedRegistration.lastname || '').trim()}</span></div>
+                      <div className="info-row"><span className="text-gray">Email:</span> <span className="text-white">{(selectedRegistration.user?.email || selectedRegistration.email || '').trim()}</span></div>
                       <div className="info-row"><span className="text-gray">Reg. Status:</span> <span className={`status-pill ${selectedRegistration.status}`}>{selectedRegistration.status?.toUpperCase()}</span></div>
                     </div>
 
@@ -581,7 +592,7 @@ const AdminDashboard = () => {
               { name: 'Webinars', value: 0 },
               { name: 'Subscriptions', value: 0 }
             ];
-        const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899'];
+        const COLORS = ['#6574e9', '#8b5cf6', '#ec4899'];
         
         const totalRevenue = data.revenueData?.cards?.totalRevenue || data.revenueData?.cards?.total_revenue || 0;
         const activeUsersCount = data.analytics?.totalClients || data.analytics?.total_clients || 0;
@@ -628,14 +639,14 @@ const AdminDashboard = () => {
                 <div className="chart-wrapper">
                   <ResponsiveContainer width="100%" height={250}>
                     <LineChart data={revenueData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                      <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc' }}
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                      <XAxis dataKey="name" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
+                      <RechartsTooltip
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#1a1a35' }}
                         itemStyle={{ color: '#10b981' }}
                       />
-                      <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#1e293b', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#10b981', strokeWidth: 0 }} />
+                      <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#ffffff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#10b981', strokeWidth: 0 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -659,11 +670,11 @@ const AdminDashboard = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc' }} 
-                        itemStyle={{ color: '#f8fafc' }}
+                      <RechartsTooltip
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#1a1a35' }}
+                        itemStyle={{ color: '#1a1a35' }}
                       />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#6b7280' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -682,7 +693,7 @@ const AdminDashboard = () => {
                     data.registrations.slice(0, 5).map(reg => (
                       <div key={reg._id} className="activity-item">
                         <div className="activity-info">
-                          <strong>{reg.user?.firstname || reg.firstname || 'Guest'} {reg.user?.lastname || reg.lastname || ''}</strong> paid <span>₹{reg.amountPaid}</span> for {reg.webinar?.title || 'a Webinar'}
+                          <strong>{(reg.user?.firstname || reg.firstname || 'Guest').trim()} {(reg.user?.lastname || reg.lastname || '').trim()}</strong> paid <span>₹{reg.amountPaid}</span> for {(reg.webinar?.title || 'a Webinar').trim()}
                         </div>
                         <div className="activity-meta">
                           <span className="time">{reg.createdAt ? new Date(reg.createdAt).toLocaleTimeString() : 'Recently'}</span>
@@ -703,7 +714,7 @@ const AdminDashboard = () => {
                     data.webinars.slice(0, 5).map(webinar => (
                       <div key={webinar._id} className="activity-item">
                         <div className="activity-info">
-                          <strong>{webinar.title}</strong> by <strong>{webinar.createdBy?.firstname || 'Creator'}</strong>
+                          <strong>{(webinar.title || '').trim()}</strong> by <strong>{(webinar.createdBy?.firstname || 'Creator').trim()}</strong>
                         </div>
                         <div className="activity-meta">
                           <span className="time">Scheduled: {webinar.webinarDateTime ? new Date(webinar.webinarDateTime).toLocaleDateString() : 'TBD'}</span>
@@ -861,12 +872,12 @@ const AdminDashboard = () => {
                     <tr key={user.id || Math.random()} onClick={() => setSelectedUser(user)} className="cursor-pointer hover-row">
                       <td>
                         <div className="user-info-cell">
-                          <div className="avatar" style={{background: '#3b82f6'}}>
+                          <div className="avatar" style={{background: '#6574e9'}}>
                             {user.userInfo?.avatar || 'U'}
                           </div>
                           <div className="user-details">
-                            <span className="user-name">{user.userInfo?.name}</span>
-                            <span className="user-email">{user.userInfo?.email}</span>
+                            <span className="user-name">{(user.userInfo?.name || '').trim()}</span>
+                            <span className="user-email">{(user.userInfo?.email || '').trim()}</span>
                           </div>
                         </div>
                       </td>
@@ -944,8 +955,8 @@ const AdminDashboard = () => {
                   <div className="drawer-body">
                     <div className="profile-hero">
                       <div className="avatar-large">{selectedUser.firstname?.[0]}{selectedUser.lastname?.[0]}</div>
-                      <h2>{selectedUser.firstname} {selectedUser.lastname}</h2>
-                      <p className="text-gray">{selectedUser.email}</p>
+                      <h2>{(selectedUser.firstname || '').trim()} {(selectedUser.lastname || '').trim()}</h2>
+                      <p className="text-gray">{(selectedUser.email || '').trim()}</p>
                       <a href={`https://${(selectedUser.firstname || 'user').toLowerCase()}.enrollify.com`} target="_blank" rel="noreferrer" className="subdomain-link">
                         {(selectedUser.firstname || 'user').toLowerCase()}.enrollify.com
                       </a>
@@ -1031,7 +1042,7 @@ const AdminDashboard = () => {
                 <ChevronLeft size={16} /> Back to Webinars
               </button>
 
-              <div className="profile-hero" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '30px', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div className="profile-hero" style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '30px', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div className={`thumbnail-large thumb-${(selectedWebinar.category || 'tech').toLowerCase()}`}>
                   {selectedWebinar.img ? <img src={selectedWebinar.img} alt={selectedWebinar.title} /> : <span>{getThumbnailInitial(selectedWebinar.title)}</span>}
                 </div>
@@ -1047,32 +1058,32 @@ const AdminDashboard = () => {
               </div>
 
               <div className="dashboard-bottom mt-20" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '20px' }}>
-                <div className="profile-section" style={{ background: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px solid #334155' }}>
-                  <h4 style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '16px', borderBottom: '1px solid #334155', paddingBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Event Details</h4>
-                  <div className="info-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #334155' }}>
-                    <span style={{ color: '#cbd5e1' }}>Creator</span>
-                    <span className="fw-500 text-white">{selectedWebinar.creator?.firstname || 'Creator'}</span>
+                <div className="profile-section" style={{ background: '#ffffff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                  <h4 style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Event Details</h4>
+                  <div className="info-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #e5e7eb' }}>
+                    <span style={{ color: '#6b7280' }}>Creator</span>
+                    <span className="fw-500 text-white">{(selectedWebinar.creator?.firstname || 'Creator').trim()}</span>
                   </div>
-                  <div className="info-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #334155' }}>
-                    <span style={{ color: '#cbd5e1' }}>Schedule</span>
+                  <div className="info-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #e5e7eb' }}>
+                    <span style={{ color: '#6b7280' }}>Schedule</span>
                     <span className="text-white">{selectedWebinar.webinarDateTime ? new Date(selectedWebinar.webinarDateTime).toLocaleDateString() : 'TBD'}</span>
                   </div>
-                  <div className="info-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #334155' }}>
-                    <span style={{ color: '#cbd5e1' }}>Registrations</span>
+                  <div className="info-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #e5e7eb' }}>
+                    <span style={{ color: '#6b7280' }}>Registrations</span>
                     <span className="text-white">{selectedWebinar.registrationsCount || 0} / {selectedWebinar.totalSeats || 0}</span>
                   </div>
                   <div className="info-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
-                    <span style={{ color: '#cbd5e1' }}>Revenue Generated</span>
+                    <span style={{ color: '#6b7280' }}>Revenue Generated</span>
                     <span className="text-green fw-500">₹ {(selectedWebinar.revenue || 0).toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div className="profile-section" style={{ background: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px solid #334155' }}>
-                  <h4 style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '16px', borderBottom: '1px solid #334155', paddingBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Recent Attendees</h4>
+                <div className="profile-section" style={{ background: '#ffffff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                  <h4 style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Recent Attendees</h4>
                   {selectedWebinar.registrationsCount > 0 ? (
                     <div className="mini-list" style={{ border: 'none', background: 'transparent' }}>
                       <div className="text-gray py-20 text-center text-small">Attendee names are only available in the Participant List.</div>
-                      <div className="mini-list-item justify-center mt-10" style={{ padding: '12px', background: '#0f172a', borderRadius: '8px', textAlign: 'center' }}>
+                      <div className="mini-list-item justify-center mt-10" style={{ padding: '12px', background: '#f8f9fb', borderRadius: '8px', textAlign: 'center' }}>
                         <span className="text-blue text-small cursor-pointer">View Participant List ({selectedWebinar.registrationsCount})</span>
                       </div>
                       <button className="warning-btn mt-20 w-100" style={{ marginTop: '20px' }}><IndianRupee size={16}/> Issue Bulk Refund</button>
@@ -1196,7 +1207,7 @@ const AdminDashboard = () => {
                         </td>
                         <td>
                           <div className="user-details">
-                            <span className="user-name">{webinar.creator?.firstname || 'Creator'}</span>
+                            <span className="user-name">{(webinar.creator?.firstname || 'Creator').trim()}</span>
                           </div>
                         </td>
                         <td>
@@ -1292,7 +1303,7 @@ const AdminDashboard = () => {
             { name: 'Direct Sales', value: 0 },
             { name: 'Subscription', value: 0 },
           ];
-        const SPLIT_COLORS = ['#3b82f6', '#8b5cf6'];
+        const SPLIT_COLORS = ['#6574e9', '#8b5cf6'];
 
         return (
           <div className="revenue-page relative">
@@ -1342,14 +1353,14 @@ const AdminDashboard = () => {
                 <div className="chart-wrapper">
                   <ResponsiveContainer width="100%" height={250}>
                     <LineChart data={revenueTrendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc' }}
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                      <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
+                      <RechartsTooltip
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#1a1a35' }}
                         itemStyle={{ color: '#10b981' }}
                       />
-                      <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#1e293b', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#10b981', strokeWidth: 0 }} />
+                      <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#ffffff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#10b981', strokeWidth: 0 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -1373,12 +1384,12 @@ const AdminDashboard = () => {
                           <Cell key={`cell-${index}`} fill={SPLIT_COLORS[index % SPLIT_COLORS.length]} />
                         ))}
                       </Pie>
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc' }} 
-                        itemStyle={{ color: '#f8fafc' }}
+                      <RechartsTooltip
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#1a1a35' }}
+                        itemStyle={{ color: '#1a1a35' }}
                         formatter={(value) => `${value}%`}
                       />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#6b7280' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -1414,8 +1425,8 @@ const AdminDashboard = () => {
                       <td>
                         <div className="user-info-cell">
                           <div className="user-details">
-                            <span className="user-name">{txn.entity?.name}</span>
-                            <span className="user-email text-gray">{txn.entity?.type}</span>
+                            <span className="user-name">{(txn.entity?.name || '').trim()}</span>
+                            <span className="user-email text-gray">{(txn.entity?.type || '').trim()}</span>
                           </div>
                         </div>
                       </td>
@@ -1459,7 +1470,7 @@ const AdminDashboard = () => {
                     <button className="close-btn" onClick={() => setSelectedTransaction(null)}><X size={20} /></button>
                   </div>
                   <div className="drawer-body">
-                    <div className="profile-hero" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                    <div className="profile-hero" style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column' }}>
                       <div className="flex-between w-100 mb-10">
                         <span className="txn-id text-gray font-mono">#{selectedTransaction.transaction?.id ? String(selectedTransaction.transaction.id).slice(-8).toUpperCase() : 'N/A'}</span>
                         <span className={`status-pill ${String(selectedTransaction.status || 'Pending').toLowerCase()}`}>
@@ -1475,8 +1486,8 @@ const AdminDashboard = () => {
                       <div className="info-row">
                         <span className="text-gray">Name</span>
                         <div className="flex-align-center gap-10">
-                            <span className="fw-500 text-white">{selectedTransaction.entity?.name}</span>
-                            <span className={`admin-badge ${selectedTransaction.entity?.type === 'Creator' ? 'plan-elite' : 'plan-basic'}`}>{selectedTransaction.entity?.type}</span>
+                            <span className="fw-500 text-white">{(selectedTransaction.entity?.name || '').trim()}</span>
+                            <span className={`admin-badge ${selectedTransaction.entity?.type === 'Creator' ? 'plan-elite' : 'plan-basic'}`}>{(selectedTransaction.entity?.type || '').trim()}</span>
                         </div>
                       </div>
                       <div className="info-row">
@@ -1671,14 +1682,14 @@ const AdminDashboard = () => {
                       >
                         <td>
                           <div className="creator-cell">
-                            <div className="creator-avatar" style={{background: '#3b82f6'}}>
+                            <div className="creator-avatar" style={{background: '#6574e9'}}>
                               {sub.creatorInfo?.avatar || 'U'}
                             </div>
                             <div className="creator-details">
                               <span className="creator-name">
-                                {sub.creatorInfo?.name || 'Unknown'} {sub.isUpgraded && <span title="Recently Upgraded" className="upgrade-icon">🚀</span>}
+                                {(sub.creatorInfo?.name || 'Unknown').trim()} {sub.isUpgraded && <span title="Recently Upgraded" className="upgrade-icon">🚀</span>}
                               </span>
-                              <span className="creator-email text-gray">{sub.creatorInfo?.email || 'No email'}</span>
+                              <span className="creator-email text-gray">{(sub.creatorInfo?.email || 'No email').trim()}</span>
                             </div>
                           </div>
                         </td>
@@ -1762,14 +1773,14 @@ const AdminDashboard = () => {
                   <div className="drawer-body">
                     
                     {/* User Mini Profile */}
-                    <div className="profile-hero" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                    <div className="profile-hero" style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column' }}>
                       <div className="creator-cell mb-10">
-                        <div className="creator-avatar" style={{width: '48px', height: '48px', fontSize: '1.2rem', background: '#3b82f6'}}>
+                        <div className="creator-avatar" style={{width: '48px', height: '48px', fontSize: '1.2rem', background: '#6574e9'}}>
                           {selectedSubscription.creatorInfo?.avatar || 'U'}
                         </div>
                         <div className="creator-details">
-                          <span className="creator-name text-large">{selectedSubscription.creatorInfo?.name}</span>
-                          <span className="creator-email text-gray">{selectedSubscription.creatorInfo?.email}</span>
+                          <span className="creator-name text-large">{(selectedSubscription.creatorInfo?.name || '').trim()}</span>
+                          <span className="creator-email text-gray">{(selectedSubscription.creatorInfo?.email || '').trim()}</span>
                         </div>
                       </div>
                       <div className="flex-between w-100 mt-10">
@@ -1894,6 +1905,10 @@ const AdminDashboard = () => {
         );
       }
 
+      case "templates": {
+        return <AdminTemplateManager />;
+      }
+
       case "settings": {
         return (
           <div className="settings-page">
@@ -1947,7 +1962,7 @@ const AdminDashboard = () => {
 
                     <div className="form-group mt-20">
                       <label>Maintenance Mode</label>
-                      <div className="flex-between w-100 p-16" style={{ background: '#0f172a', borderRadius: '8px', border: '1px solid #334155' }}>
+                      <div className="flex-between w-100 p-16" style={{ background: '#f8f9fb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                         <div>
                           <span className="fw-500 block">Enable Maintenance Mode</span>
                           <span className="text-gray text-small">Shows an "Upgrading" screen to all users except Admins.</span>
@@ -1973,7 +1988,7 @@ const AdminDashboard = () => {
                     <h3>Integrations & API Keys</h3>
 
                     {/* Payment Gateways */}
-                    <div className="integration-card mt-20 p-20" style={{ background: '#0f172a', borderRadius: '8px', border: '1px solid #334155' }}>
+                    <div className="integration-card mt-20 p-20" style={{ background: '#f8f9fb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                       <div className="flex-between mb-16">
                         <div className="flex-align-center gap-10">
                           <CreditCard size={20} className="text-blue" />
@@ -1998,7 +2013,7 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* WhatsApp API */}
-                    <div className="integration-card mt-20 p-20" style={{ background: '#0f172a', borderRadius: '8px', border: '1px solid #334155' }}>
+                    <div className="integration-card mt-20 p-20" style={{ background: '#f8f9fb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                       <div className="flex-align-center gap-10 mb-16">
                         <Smartphone size={20} className="text-green" />
                         <h4 style={{ margin: 0 }}>WhatsApp (Twilio/Interakt)</h4>
@@ -2113,7 +2128,7 @@ const AdminDashboard = () => {
     <div className="dashboard-wrapper">
       <div className="sidebar">
         <div className="logo-container">
-          <img src="/logo.png" alt="Enrollify" className="dashboard-logo" />
+          <img src={logoImg} alt="Enrollify" className="dashboard-logo" />
         </div>
         <ul>
           <li className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}>
@@ -2137,11 +2152,19 @@ const AdminDashboard = () => {
           <li className={activeTab === "subscriptions" ? "active" : ""} onClick={() => setActiveTab("subscriptions")}>
             <Crown size={20} /> Subscriptions
           </li>
+          <li className={activeTab === "templates" ? "active" : ""} onClick={() => setActiveTab("templates")} style={{ position: "relative" }}>
+            <ClipboardList size={20} /> Templates
+            {unregisteredCount > 0 && (
+              <span style={{ position: "absolute", top: "6px", right: "10px", width: "20px", height: "20px", borderRadius: "50%", background: "#ef4444", color: "white", fontSize: "0.68rem", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {unregisteredCount}
+              </span>
+            )}
+          </li>
           <li className={activeTab === "settings" ? "active" : ""} onClick={() => setActiveTab("settings")}>
             <Settings size={20} /> Settings
           </li>
         </ul>
-        <div style={{ padding: '16px', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ padding: '16px', marginTop: 'auto', borderTop: '1px solid #e5e7eb' }}>
           <button
             onClick={() => {
               localStorage.removeItem("isAdminAuth");
@@ -2150,7 +2173,7 @@ const AdminDashboard = () => {
               localStorage.removeItem("token");
               window.location.href = "/admin";
             }}
-            style={{ width: '100%', padding: '10px 16px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            style={{ width: '100%', padding: '10px 16px', background: 'rgba(239,68,68,0.06)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           >
             <LogOut size={16} /> Logout
           </button>
@@ -2167,6 +2190,7 @@ const AdminDashboard = () => {
             {activeTab === "registrations" && "Registrations"}
             {activeTab === "revenue" && "Platform Revenue"}
             {activeTab === "subscriptions" && "Subscriptions"}
+            {activeTab === "templates" && "Templates"}
             {activeTab === "settings" && "Admin Settings"}
           </h1>
           <div className="profile">
@@ -2186,16 +2210,16 @@ const AdminDashboard = () => {
       {/* DEBUG OVERLAY */}
       <button 
         onClick={() => setShowDebug(!showDebug)}
-        style={{ position: 'fixed', bottom: '20px', right: '20px', padding: '10px 15px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', zIndex: 10000, fontWeight: 'bold', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)' }}
+        style={{ position: 'fixed', bottom: '20px', right: '20px', padding: '10px 15px', background: '#6574e9', color: '#1a1a35', border: 'none', borderRadius: '50px', cursor: 'pointer', zIndex: 10000, fontWeight: 'bold', boxShadow: '0 4px 15px rgba(101, 116, 233, 0.3)' }}
       >
         {showDebug ? "Close Debug ❌" : "Debug API Data 🛠️"}
       </button>
 
       {showDebug && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.95)', zIndex: 9999, padding: '50px', overflowY: 'auto', color: '#10b981', fontFamily: 'monospace', fontSize: '14px' }}>
-          <h2 style={{ color: '#fff' }}>RAW API DATA (Admin Dashboard)</h2>
+          <h2 style={{ color: '#1a1a35' }}>RAW API DATA (Admin Dashboard)</h2>
           <pre>{JSON.stringify(data, null, 2)}</pre>
-          <hr style={{ margin: '30px 0', borderColor: '#334155' }} />
+          <hr style={{ margin: '30px 0', borderColor: '#e5e7eb' }} />
           <h3>Token Used:</h3>
           <p>{localStorage.getItem("token") || localStorage.getItem("adminToken")}</p>
         </div>

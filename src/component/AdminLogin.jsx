@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import "./AdminLogin.css";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../api/config.js";
+import logoImg from "../assets/Logo.jpeg";
 
 function AdminLogin() {
   const [forgot, setForgot] = useState(false);
@@ -200,14 +201,14 @@ function AdminLogin() {
     <div className="admin-auth-wrapper">
       <form autoComplete="off" onSubmit={(e) => e.preventDefault()} className="admin-auth-card">
         <div className="admin-logo-container">
-          <img src="/logo.png" alt="Enrollify" className="admin-logo" />
+          <img src={logoImg} alt="Enrollify" className="admin-logo" />
         </div>
         
         <h2>{forgot ? "Admin Recovery" : "Admin Portal"}</h2>
         <p className="admin-subtitle">Secure Gateway Access</p>
 
         {errorMsg && (
-            <div style={{ color: "#ffb8dc", background: "rgba(255, 0, 122, 0.1)", border: "1px solid rgba(255, 0, 122, 0.3)", padding: "10px", borderRadius: "8px", marginBottom: "15px", fontSize: "13px", fontWeight: "600" }}>
+            <div style={{ color: "#ef4444", background: "rgba(239, 68, 68, 0.06)", border: "1px solid rgba(239, 68, 68, 0.15)", padding: "10px", borderRadius: "8px", marginBottom: "15px", fontSize: "13px", fontWeight: "600" }}>
               {errorMsg}
             </div>
         )}

@@ -7,6 +7,8 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
 import { useNavigate } from "react-router-dom";
 import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI, getClientAudienceAPI, getClientSubscriptionAPI, getClientProfileAPI, updateClientProfileAPI } from "../api/clientApi";
 import { API_BASE } from "../api/config.js";
+import logoImg from "../assets/Logo.jpeg";
+import TemplateGallery from "./TemplateGallery";
 
 
 const generateZeroTrend = (days = 30) => {
@@ -49,22 +51,22 @@ class ErrorBoundary extends React.Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="section-error-fallback" style={{ padding: '60px 20px', textAlign: 'center', background: '#0f172a', color: 'white', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="section-error-fallback" style={{ padding: '60px 20px', textAlign: 'center', background: '#f8f9fb', color: '#1a1a35', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
                     <h2 style={{ fontSize: '24px', marginBottom: '10px', color: '#f87171' }}>Rendering Error</h2>
-                    <p style={{ color: '#94a3b8', maxWidth: '500px', marginBottom: '30px' }}>
+                    <p style={{ color: '#6b7280', maxWidth: '500px', marginBottom: '30px' }}>
                         This section failed to display due to a data processing error.
                         We've logged the details for investigation.
                     </p>
                     <button
                         className="primary-glow-btn"
                         onClick={() => this.setState({ hasError: false })}
-                        style={{ padding: '12px 24px', background: '#3b82f6', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
+                        style={{ padding: '12px 24px', background: '#6574e9', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
                     >
                         Try to Recover
                     </button>
                     {process.env.NODE_ENV === 'development' && (
-                        <pre style={{ marginTop: '30px', padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', textAlign: 'left', fontSize: '12px', overflowX: 'auto', width: '90%' }}>
+                        <pre style={{ marginTop: '30px', padding: '20px', background: 'rgba(101,116,233,0.04)', borderRadius: '8px', textAlign: 'left', fontSize: '12px', overflowX: 'auto', width: '90%' }}>
                             {this.state.error?.toString()}
                         </pre>
                     )}
@@ -80,6 +82,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedPlan, onLogout }) => {
         { name: "Overview", icon: "🏠" },
         { name: "Analytics", icon: "📊" },
         { name: "Webinars", icon: "🎥" },
+        { name: "Templates", icon: "🎨" },
         { name: "Audience", icon: "👥" },
         { name: "Revenue", icon: "💰" },
         { name: "Billing", icon: "💳" },
@@ -91,7 +94,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedPlan, onLogout }) => {
     return (
         <div className="sidebar">
             <div className="logo-container">
-                <img src="/logo.png" alt="Enrollify" className="dashboard-logo" />
+                <img src={logoImg} alt="Enrollify" className="dashboard-logo" />
             </div>
             <ul>
                 {visibleTabs.map((tab) => (
@@ -104,10 +107,10 @@ const Sidebar = ({ activeTab, setActiveTab, selectedPlan, onLogout }) => {
                     </li>
                 ))}
             </ul>
-            <div className="sidebar-logout" style={{ padding: '16px', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="sidebar-logout" style={{ padding: '16px', marginTop: 'auto', borderTop: '1px solid #e5e7eb' }}>
                 <button
                     onClick={onLogout}
-                    style={{ width: '100%', padding: '10px 16px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    style={{ width: '100%', padding: '10px 16px', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
                     Logout
                 </button>
@@ -129,6 +132,7 @@ const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
                 {activeTab === "Analytics" && "Analytics & Conversion"}
                 {activeTab === "Audience" && "Audience CRM"}
                 {activeTab === "Webinars" && "Webinars"}
+                {activeTab === "Templates" && "Template Gallery"}
                 {activeTab === "Revenue" && "Revenue & Payouts"}
                 {activeTab === "Billing" && "Billing / Plan"}
                 {activeTab === "Settings" && "Settings"}
@@ -138,7 +142,7 @@ const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
                     {profilePic ? (
                         <img src={profilePic} alt="Profile" className="topbar-profile-pic" />
                     ) : (
-                        <div className="avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#3b82f6', color: '#fff', fontSize: '16px', fontWeight: 'bold' }}>
+                        <div className="avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#6574e9', color: '#fff', fontSize: '16px', fontWeight: 'bold' }}>
                             {getInitials(userName)}
                         </div>
                     )}
@@ -292,22 +296,22 @@ const AnalyticsSection = ({ selectedPlan, setActiveTab, dashboardStats, webinarS
                     <AreaChart data={(dashboardStats?.conversionTrend && dashboardStats.conversionTrend.length > 0) ? dashboardStats.conversionTrend : generateZeroTrend(7)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#00c6ff" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="#00c6ff" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#6574e9" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="#6574e9" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#a2aef7" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="#a2aef7" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <XAxis dataKey="date" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
-                        <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                        <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
+                        <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
                         <Tooltip
-                            contentStyle={{ backgroundColor: "rgba(15, 23, 42, 0.9)", borderColor: "rgba(255, 255, 255, 0.1)", color: "#fff", backdropFilter: "blur(10px)", borderRadius: "12px" }}
-                            itemStyle={{ color: '#fff' }}
+                            contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e5e7eb", color: "#1a1a35", backdropFilter: "blur(10px)", borderRadius: "12px" }}
+                            itemStyle={{ color: '#1a1a35' }}
                         />
-                        <Area type="monotone" dataKey="views" name="Page Views" stroke="#00c6ff" strokeWidth={3} fillOpacity={1} fill="url(#colorViews)" activeDot={{ r: 6, strokeWidth: 0, fill: '#00c6ff' }} />
-                        <Area type="monotone" dataKey="registrations" name="Registrations" stroke="#a855f7" strokeWidth={3} fillOpacity={1} fill="url(#colorReg)" activeDot={{ r: 6, strokeWidth: 0, fill: '#a855f7' }} />
+                        <Area type="monotone" dataKey="views" name="Page Views" stroke="#6574e9" strokeWidth={3} fillOpacity={1} fill="url(#colorViews)" activeDot={{ r: 6, strokeWidth: 0, fill: '#6574e9' }} />
+                        <Area type="monotone" dataKey="registrations" name="Registrations" stroke="#a2aef7" strokeWidth={3} fillOpacity={1} fill="url(#colorReg)" activeDot={{ r: 6, strokeWidth: 0, fill: '#a2aef7' }} />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
@@ -344,8 +348,8 @@ const AnalyticsSection = ({ selectedPlan, setActiveTab, dashboardStats, webinarS
                         <PieChart>
                             <Pie
                                 data={(dashboardStats?.deviceData && dashboardStats.deviceData.length > 0) ? dashboardStats.deviceData : [
-                                    { name: 'Desktop', value: 100, color: '#00c6ff' },
-                                    { name: 'Mobile', value: 0, color: '#a855f7' }
+                                    { name: 'Desktop', value: 100, color: '#6574e9' },
+                                    { name: 'Mobile', value: 0, color: '#a2aef7' }
                                 ]}
                                 cx="50%"
                                 cy="50%"
@@ -356,18 +360,18 @@ const AnalyticsSection = ({ selectedPlan, setActiveTab, dashboardStats, webinarS
                                 stroke="none"
                                 cornerRadius={8}
                             >
-                                {(dashboardStats?.deviceData && dashboardStats.deviceData.length > 0 ? dashboardStats.deviceData : [{ color: '#00c6ff' }, { color: '#a855f7' }]).map((entry, index) => (
+                                {(dashboardStats?.deviceData && dashboardStats.deviceData.length > 0 ? dashboardStats.deviceData : [{ color: '#6574e9' }, { color: '#a2aef7' }]).map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                             </Pie>
                             <Tooltip
-                                contentStyle={{ backgroundColor: "rgba(15, 23, 42, 0.9)", borderColor: "rgba(255, 255, 255, 0.1)", color: "#fff", borderRadius: "10px" }}
-                                itemStyle={{ color: '#fff' }}
+                                contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e5e7eb", color: "#1a1a35", borderRadius: "10px" }}
+                                itemStyle={{ color: '#1a1a35' }}
                             />
                         </PieChart>
                     </ResponsiveContainer>
                     <div className="donut-center-label">
-                        <Activity size={24} color="#00c6ff" />
+                        <Activity size={24} color="#6574e9" />
                         <span>Devices</span>
                     </div>
                 </div>
@@ -495,7 +499,7 @@ const WebinarsSection = ({ webinarSearch, setWebinarSearch, webinarFilter, setWe
                     .filter(w => w && (w.title || '').toLowerCase().includes(webinarSearch.toLowerCase()))
                     .map((webinar) => webinar && (
                         <div key={webinar.id || webinar._id} className={`webinar-card ${webinar.status === 'Draft' ? 'is-draft' : ''}`}>
-                            <div className="card-banner" style={{ background: webinar.bannerImage || webinar.thumbnail || '#1e293b', backgroundSize: 'cover' }}>
+                            <div className="card-banner" style={{ background: webinar.bannerImage || webinar.thumbnail || '#e5e7eb', backgroundSize: 'cover' }}>
                                 <span className="banner-emoji">{webinar.emoji || '🎥'}</span>
                                 <div className={`status-badge status-${(webinar.status || 'Published').toLowerCase()}`}>
                                     <span className="status-dot"></span>
@@ -615,10 +619,10 @@ const AudienceSection = ({ searchQuery, setSearchQuery, selectedWebinar, setSele
                                 const joinedDate = student.createdAt || student.registrationDate || student.joinedDate || student.date;
 
                                 return (
-                                    <tr key={student._id || student.id || index} className="crm-table-row" onClick={() => setDrawerStudent({ ...student, name: studentName, email: studentEmail, phone: studentPhone, avatarColor: student.avatarColor || '#3b82f6' })}>
+                                    <tr key={student._id || student.id || index} className="crm-table-row" onClick={() => setDrawerStudent({ ...student, name: studentName, email: studentEmail, phone: studentPhone, avatarColor: student.avatarColor || '#6574e9' })}>
                                         <td>
                                             <div className="student-info-cell">
-                                                <div className="student-avatar" style={{ background: `linear-gradient(45deg, ${student.avatarColor || '#3b82f6'}, #1e293b)` }}>
+                                                <div className="student-avatar" style={{ background: `linear-gradient(45deg, ${student.avatarColor || '#6574e9'}, #e5e7eb)` }}>
                                                     {studentName.charAt(0) || 'U'}
                                                 </div>
                                                 <div className="student-details">
@@ -672,9 +676,9 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
                 <div className="chart-container">
                     <ResponsiveContainer width="100%" height={280}>
                         <BarChart data={(dashboardStats?.revenueTrend && dashboardStats.revenueTrend.length > 0) ? dashboardStats.revenueTrend : generateZeroTrend(7)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <defs><linearGradient id="colorEarnings" x1="0" y1="1" x2="0" y2="0"><stop offset="5%" stopColor="#052c22" stopOpacity={1} /><stop offset="50%" stopColor="#059669" stopOpacity={1} /><stop offset="100%" stopColor="#10b981" stopOpacity={1} /></linearGradient></defs>
-                            <XAxis dataKey="date" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} /><YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} tickFormatter={(v) => `₹${v / 1000}k`} />
-                            <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} /><Bar dataKey="earnings" fill="url(#colorEarnings)" radius={[6, 6, 0, 0]} barSize={32} />
+                            <defs><linearGradient id="colorEarnings" x1="0" y1="1" x2="0" y2="0"><stop offset="5%" stopColor="#dcfce7" stopOpacity={1} /><stop offset="50%" stopColor="#059669" stopOpacity={1} /><stop offset="100%" stopColor="#10b981" stopOpacity={1} /></linearGradient></defs>
+                            <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af' }} /><YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} tickFormatter={(v) => `₹${v / 1000}k`} />
+                            <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'rgba(101,116,233,0.05)' }} /><Bar dataKey="earnings" fill="url(#colorEarnings)" radius={[6, 6, 0, 0]} barSize={32} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -709,7 +713,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
                                     </tr>
                                 ))}
                                 {audienceList.flatMap(u => u.webinars || []).filter(w => w.amountPaid > 0).length === 0 && (
-                                    <tr><td colSpan="5" style={{ textAlign: 'center', color: '#94a3b8', padding: '24px' }}>No paid transactions yet</td></tr>
+                                    <tr><td colSpan="5" style={{ textAlign: 'center', color: '#6b7280', padding: '24px' }}>No paid transactions yet</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -719,7 +723,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
                     <h3>Payout Management</h3>
                     <p className="subtitle">Withdraw your earnings directly to your bank account.</p>
                     <div className="bank-account-box">
-                        <div className="bank-icon-circle"><Landmark size={20} color="#00c6ff" /></div>
+                        <div className="bank-icon-circle"><Landmark size={20} color="#6574e9" /></div>
                         <div className="bank-details">
                             <span className="bank-name">{subscriptionData?.bankDetails?.bankName || subscriptionData?.upiId || "No payout method"}</span>
                             <span className="bank-number">{subscriptionData?.bankDetails?.accountNumber ? `A/C •••• ${subscriptionData.bankDetails.accountNumber.slice(-4)}` : subscriptionData?.upiId ? `UPI: ${subscriptionData.upiId}` : "Add in Settings"}</span>
@@ -747,7 +751,7 @@ const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActive
                     <span className="current-plan-label">CURRENT PLAN</span>
                     <h2 className="plan-name-display">{subscriptionData?.subscription?.name || selectedPlan || "Free"} Plan</h2>
                     {subscriptionData?.subscriptionValidTill && (
-                        <p style={{ color: '#94a3b8', fontSize: '12px', marginTop: '4px' }}>
+                        <p style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px' }}>
                             Valid till: {new Date(subscriptionData.subscriptionValidTill).toLocaleDateString()}
                         </p>
                     )}
@@ -804,7 +808,7 @@ const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActive
                             <div className="card-details">
                                 <span>{subscriptionData.bankDetails.bankName || "Bank Account"}</span>
                                 <span>A/C •••• {subscriptionData.bankDetails.accountNumber.slice(-4)}</span>
-                                {subscriptionData.bankDetails.ifscCode && <span style={{ fontSize: '11px', color: '#94a3b8' }}>IFSC: {subscriptionData.bankDetails.ifscCode}</span>}
+                                {subscriptionData.bankDetails.ifscCode && <span style={{ fontSize: '11px', color: '#6b7280' }}>IFSC: {subscriptionData.bankDetails.ifscCode}</span>}
                             </div>
                             <button className="edit-payment-btn" onClick={() => setActiveTab("Settings")}>Edit</button>
                         </div>
@@ -820,7 +824,7 @@ const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActive
                         </div>
                     )}
                     {!subscriptionData?.bankDetails?.accountNumber && !subscriptionData?.upiId && (
-                        <p style={{ color: '#94a3b8', fontSize: '13px', padding: '16px 0' }}>No payout method configured. Add one in Settings.</p>
+                        <p style={{ color: '#6b7280', fontSize: '13px', padding: '16px 0' }}>No payout method configured. Add one in Settings.</p>
                     )}
                 </div>
                 <button className="add-method-btn" onClick={() => setActiveTab("Settings")}>
@@ -1120,7 +1124,7 @@ const SettingsSection = ({ activeSettingTab, setActiveSettingTab, isSavingSettin
         {/* Toast Notification */}
         <div className={`settings-toast ${showToast ? 'show' : ''}`}>
             <div className="toast-content">
-                <img src="/logo.png" alt="" className="toast-mini-logo" />
+                <img src={logoImg} alt="" className="toast-mini-logo" />
                 <span>Settings saved successfully!</span>
             </div>
         </div>
@@ -1133,7 +1137,7 @@ const StudentDrawer = ({ drawerStudent, setDrawerStudent }) => drawerStudent && 
     <div className="config-drawer-overlay show" onClick={() => setDrawerStudent(null)}>
         <div className="config-drawer-content audience-drawer" onClick={e => e.stopPropagation()}>
             <button className="close-drawer-btn" onClick={() => setDrawerStudent(null)}><X size={20} /></button>
-            <div className="audience-hero-header" style={{ background: `linear-gradient(135deg, ${drawerStudent.avatarColor}, #1e293b)` }}>
+            <div className="audience-hero-header" style={{ background: `linear-gradient(135deg, ${drawerStudent.avatarColor}, #e5e7eb)` }}>
                 <div className="hero-avatar-large">{drawerStudent.name.charAt(0)}</div>
                 <div className="hero-info-text"><h2>{drawerStudent.name}</h2><p>{drawerStudent.email} • Joined {drawerStudent.joinedDate}</p></div>
             </div>
@@ -1394,7 +1398,7 @@ const DashBoard = () => {
     const [isSavingSettings, setIsSavingSettings] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [subdomain, setSubdomain] = useState("divasgupta");
-    const [brandColor, setBrandColor] = useState("#00c6ff");
+    const [brandColor, setBrandColor] = useState("#6574e9");
     const [isSubdomainAvailable, setIsSubdomainAvailable] = useState(true);
     const [payoutUpi, setPayoutUpi] = useState("");
     const [payoutUpiError, setPayoutUpiError] = useState("");
@@ -1697,6 +1701,11 @@ const DashBoard = () => {
                         />
                     </ErrorBoundary>
                 )}
+                {activeTab === "Templates" && (
+                    <ErrorBoundary>
+                        <TemplateGallery subscriptionData={subscriptionData} />
+                    </ErrorBoundary>
+                )}
                 {activeTab === "Audience" && (
                     <ErrorBoundary>
                         <AudienceSection
@@ -1797,24 +1806,24 @@ const DashBoard = () => {
             {/* DEBUG OVERLAY */}
             <button
                 onClick={() => setShowDebug(!showDebug)}
-                style={{ position: 'fixed', bottom: '20px', right: '20px', padding: '10px 15px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', zIndex: 10000, fontWeight: 'bold', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)' }}
+                style={{ position: 'fixed', bottom: '20px', right: '20px', padding: '10px 15px', background: '#6574e9', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', zIndex: 10000, fontWeight: 'bold', boxShadow: '0 4px 15px rgba(101, 116, 233, 0.3)' }}
             >
                 {showDebug ? "Close Debug ❌" : "Debug API Data 🛠️"}
             </button>
 
             {showDebug && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.95)', zIndex: 9999, padding: '50px', overflowY: 'auto', color: '#10b981', fontFamily: 'monospace', fontSize: '14px' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.97)', zIndex: 9999, padding: '50px', overflowY: 'auto', color: '#1a1a35', fontFamily: 'monospace', fontSize: '14px' }}>
                     <h2 style={{ color: '#fff' }}>RAW API DATA (Client Dashboard)</h2>
                     <div style={{ marginBottom: '20px' }}>
-                        <h4 style={{ color: '#3b82f6' }}>Dashboard Stats:</h4>
+                        <h4 style={{ color: '#6574e9' }}>Dashboard Stats:</h4>
                         <pre>{JSON.stringify(dashboardStats, null, 2)}</pre>
                     </div>
                     <div style={{ marginBottom: '20px' }}>
-                        <h4 style={{ color: '#3b82f6' }}>Webinar Stats:</h4>
+                        <h4 style={{ color: '#6574e9' }}>Webinar Stats:</h4>
                         <pre>{JSON.stringify(webinarStats, null, 2)}</pre>
                     </div>
                     <div style={{ marginBottom: '20px' }}>
-                        <h4 style={{ color: '#3b82f6' }}>Audience List:</h4>
+                        <h4 style={{ color: '#6574e9' }}>Audience List:</h4>
                         <pre>{JSON.stringify(audienceList, null, 2)}</pre>
                     </div>
                     <hr style={{ margin: '30px 0', borderColor: '#334155' }} />

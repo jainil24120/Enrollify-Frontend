@@ -1,0 +1,239 @@
+/* ===== TEMPLATE GALLERY ===== */
+
+.template-gallery {
+  padding: 0;
+}
+
+.template-gallery .tg-header {
+  margin-bottom: 32px;
+}
+
+.template-gallery .tg-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a35;
+  margin-bottom: 8px;
+}
+
+.template-gallery .tg-subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+/* Card Grid */
+.template-gallery .tg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+/* Template Card */
+.template-gallery .tg-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.template-gallery .tg-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(101, 116, 233, 0.1);
+  border-color: rgba(101, 116, 233, 0.3);
+}
+
+.template-gallery .tg-card.tg-locked {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.template-gallery .tg-card.tg-locked:hover {
+  transform: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* Thumbnail */
+.template-gallery .tg-thumb {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.template-gallery .tg-thumb-classic {
+  background: linear-gradient(135deg, #f9f7f6, #eef0fb);
+}
+
+.template-gallery .tg-thumb-modern {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+
+.template-gallery .tg-thumb-bold {
+  background: linear-gradient(135deg, #fff5f0, #ffe8e0);
+}
+
+.template-gallery .tg-thumb-default {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+}
+
+.template-gallery .tg-thumb-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.template-gallery .tg-thumb-classic .tg-thumb-label {
+  color: #6574e9;
+}
+
+.template-gallery .tg-thumb-modern .tg-thumb-label {
+  color: #00c6ff;
+}
+
+.template-gallery .tg-thumb-bold .tg-thumb-label {
+  background: linear-gradient(135deg, #ff6b35, #f72585);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.template-gallery .tg-thumb-default .tg-thumb-label {
+  color: #6b7280;
+}
+
+/* Lock Overlay */
+.template-gallery .tg-lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.template-gallery .tg-lock-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-gallery .tg-lock-icon svg {
+  color: white;
+}
+
+.template-gallery .tg-lock-text {
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 0 16px;
+}
+
+/* Card Body */
+.template-gallery .tg-card-body {
+  padding: 20px;
+}
+
+.template-gallery .tg-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.template-gallery .tg-card-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a1a35;
+}
+
+.template-gallery .tg-tier-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.template-gallery .tg-tier-basic {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.template-gallery .tg-tier-growth {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.template-gallery .tg-tier-elite {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+}
+
+.template-gallery .tg-card-desc {
+  font-size: 0.85rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.template-gallery .tg-available-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.template-gallery .tg-available-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Loading & Error */
+.template-gallery .tg-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.template-gallery .tg-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #ef4444;
+  font-size: 0.95rem;
+  background: #fef2f2;
+  border-radius: 12px;
+  border: 1px solid #fecaca;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .template-gallery .tg-grid {
+    grid-template-columns: 1fr;
+  }
+}

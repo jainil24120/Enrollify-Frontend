@@ -71,6 +71,7 @@ function ClientForm() {
     firstName: "",
     lastName: "",
     organization: "",
+    subdomain: "",
     phone: "",
     email: "",
     gst: "",
@@ -82,6 +83,28 @@ function ClientForm() {
   });
 
   const [errors, setErrors] = useState({});
+  const [subdomainStatus, setSubdomainStatus] = useState(null); // null | "checking" | "available" | "taken"
+
+  // Live subdomain availability check
+  useEffect(() => {
+    const raw = formData.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/\s+/g, "");
+    if (raw.length < 3) { setSubdomainStatus(null); return; }
+
+    setSubdomainStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem("token") || "";
+        const res = await fetch(`${API_BASE}/api/clientprofile/check-subdomain?subdomain=${raw}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setSubdomainStatus(data.available ? "available" : "taken");
+      } catch {
+        setSubdomainStatus(null);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData.subdomain]);
 
   const regex = {
     name: /^[A-Za-z]+$/,
@@ -150,6 +173,15 @@ function ClientForm() {
 
     let newErrors = {};
 
+    // ===== SUBDOMAIN VALIDATION =====
+    const cleanSub = formData.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    if (cleanSub.length < 3) {
+      newErrors.subdomain = "Subdomain must be at least 3 characters";
+    }
+    if (subdomainStatus === "taken") {
+      newErrors.subdomain = "This subdomain is already taken";
+    }
+
     // ===== BASIC FIELDS VALIDATION =====
     const basicFields = [
       "firstName",
@@ -211,10 +243,11 @@ function ClientForm() {
             first_name: formData.firstName,
             last_name: formData.lastName,
             Organization_Name: formData.organization,
+            subdomain: formData.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, ""),
             phone: formData.phone,
             upiId: formData.upi,
             gstNumber: formData.gst,
-            email: formData.email, // keeping for context
+            email: formData.email,
             paymentMode
           };
 
@@ -260,7 +293,7 @@ function ClientForm() {
                 if (verifyRes.success || verifyRes) {
                   setSuccess(true);
                   localStorage.removeItem("selectedPlanIntent");
-                  setTimeout(() => navigate("/create-webinar"), 2000);
+                  setTimeout(() => navigate("/dashboard"), 2000);
                 }
               } catch (err) {
                 console.error("Payment Verification Failed:", err);
@@ -334,6 +367,27 @@ function ClientForm() {
                 {errors[field] && <span>{errors[field]}</span>}
               </div>
             ))}
+          </div>
+
+          <h2>Choose Your Subdomain</h2>
+          <div className="subdomain-picker">
+            <div className="subdomain-input-row">
+              <span className="subdomain-prefix">https://</span>
+              <input
+                type="text"
+                name="subdomain"
+                value={formData.subdomain}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="yourname"
+                className="subdomain-field"
+              />
+              <span className="subdomain-suffix">.enrollify.in</span>
+            </div>
+            {subdomainStatus === "checking" && <p className="subdomain-msg checking">Checking availability...</p>}
+            {subdomainStatus === "available" && <p className="subdomain-msg available">This subdomain is available!</p>}
+            {subdomainStatus === "taken" && <p className="subdomain-msg taken">This subdomain is already taken. Try another.</p>}
+            {errors.subdomain && <span className="subdomain-error">{errors.subdomain}</span>}
           </div>
 
           <h2>Select Payment Mode</h2>
