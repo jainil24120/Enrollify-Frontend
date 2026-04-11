@@ -39,6 +39,7 @@
 .webinar-wrapper .form-card {
   width: 100%;
   max-width: 1100px;
+  margin: 0 auto;
   background: #ffffff;
   padding: 50px;
   border-radius: 24px;
@@ -46,6 +47,28 @@
   box-shadow: 0 4px 24px rgba(101, 116, 233, 0.06), 0 20px 50px rgba(26, 26, 53, 0.04);
   position: relative;
   z-index: 1;
+}
+
+.cw-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #6574e9;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 20px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  font-family: var(--font-body, 'Inter', sans-serif);
+}
+
+.cw-back-btn:hover {
+  background: rgba(101, 116, 233, 0.06);
+  transform: translateX(-3px);
 }
 
 .webinar-wrapper .form-card h1 {
@@ -310,6 +333,46 @@
   color: #16a34a;
   font-weight: 600;
   text-decoration: underline;
+}
+
+/* ===== FORM FIELD LABELS & HELPERS ===== */
+.cw-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 6px;
+}
+
+.cw-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.cw-req {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.cw-hint {
+  font-weight: 400;
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+.cw-desc {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.cw-section-desc {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin-bottom: 20px;
+  line-height: 1.6;
 }
 
 /* Responsive */

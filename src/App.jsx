@@ -11,6 +11,7 @@ import SubdomainPage from "./component/SubdomainPage";
 import AdminDashboard from "./component/AdminDashboard";
 import AdminLogin from "./component/AdminLogin";
 import UserForm from "./component/UserForm";
+import TemplatePreview from "./component/TemplatePreview";
 
 // Detect subdomain: yoga.enrollify.xyz → "yoga"
 const getSubdomain = () => {
@@ -23,7 +24,7 @@ const getSubdomain = () => {
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
-  if (!token) return <Navigate to="/signup" replace />;
+  if (!token) return <Navigate to="/signin" replace />;
   return children;
 };
 
@@ -55,7 +56,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/signup" element={<SignUpform />} />
+        <Route path="/signin" element={<SignUpform />} />
         <Route path="/dashboard" element={<ProtectedRoute><DashBoard /></ProtectedRoute>} />
         <Route path="/client-form" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
         <Route path="/create-webinar" element={<ProtectedRoute><CreateWebinar /></ProtectedRoute>} />
@@ -63,6 +64,7 @@ function App() {
         <Route path="/template" element={<TemplatePage />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/preview/:templateKey" element={<TemplatePreview />} />
         <Route path="/register" element={<UserForm />} />
       </Routes>
     </BrowserRouter>

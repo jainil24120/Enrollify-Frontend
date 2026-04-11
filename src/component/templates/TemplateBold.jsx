@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { CheckCircle2, Star, Users, Calendar, Clock, Globe, Laptop, Gift, Instagram, Youtube, Linkedin, Twitter, ExternalLink, ChevronDown, ChevronUp, Target, BookOpen, HelpCircle, List } from "lucide-react";
+import { API_BASE } from "../../api/config.js";
 import "./TemplateBold.css";
+
+const imgUrl = (src) => {
+  if (!src) return "";
+  if (src.startsWith("http") || src.startsWith("data:")) return src;
+  return API_BASE + src;
+};
 
 function TemplateBold({ data, onRegister }) {
   const [scrolled, setScrolled] = useState(false);
@@ -43,7 +50,7 @@ function TemplateBold({ data, onRegister }) {
   } = data;
 
   const isFree = price === 0;
-  const displayImage = speakerImage || bannerImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80";
+  const displayImage = imgUrl(speakerImage) || imgUrl(bannerImage) || "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80";
   const ctaLabel = ctaText || (isFree ? "Register for FREE" : `Register Now at \u20B9${price}/-`);
   const deadlineText = registrationDeadline
     ? new Date(registrationDeadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })

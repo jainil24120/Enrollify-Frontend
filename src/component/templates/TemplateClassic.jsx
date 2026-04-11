@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { CheckCircle2, Star, Users, Calendar, Clock, Globe, Laptop, Gift, ArrowRight, Instagram, Youtube, Linkedin, Twitter, ExternalLink, ChevronDown, ChevronUp, Target, BookOpen, HelpCircle, List } from "lucide-react";
+import { API_BASE } from "../../api/config.js";
 import "../TemplatePage.css";
+
+const imgUrl = (src) => {
+  if (!src) return "";
+  if (src.startsWith("http") || src.startsWith("data:")) return src;
+  return API_BASE + src;
+};
 
 function TemplateClassic({ data, onRegister }) {
   const [scrolled, setScrolled] = useState(false);
@@ -44,7 +51,7 @@ function TemplateClassic({ data, onRegister }) {
   } = data;
 
   const isFree = price === 0;
-  const displayImage = speakerImage || bannerImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80";
+  const displayImage = imgUrl(speakerImage) || imgUrl(bannerImage) || "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80";
   const ctaLabel = ctaText || (isFree ? "Register for FREE" : `Register Now at \u20B9${price}/-`);
   const deadlineText = registrationDeadline
     ? new Date(registrationDeadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
@@ -216,7 +223,7 @@ function TemplateClassic({ data, onRegister }) {
             <h2>Meet Your Host</h2>
             <div style={{ display: "flex", gap: "24px", alignItems: "flex-start", flexWrap: "wrap" }}>
               {(speakerImage || bannerImage) && (
-                <img src={speakerImage || bannerImage} alt={speakerName} style={{ width: "120px", height: "120px", borderRadius: "50%", objectFit: "cover", border: "3px solid rgba(101,116,233,0.2)" }} />
+                <img src={imgUrl(speakerImage) || imgUrl(bannerImage)} alt={speakerName} style={{ width: "120px", height: "120px", borderRadius: "50%", objectFit: "cover", border: "3px solid rgba(101,116,233,0.2)" }} />
               )}
               <div style={{ flex: 1, minWidth: "250px" }}>
                 <h3 style={{ fontSize: "22px", marginBottom: "8px", color: "#1a1a35" }}>{speakerName}</h3>

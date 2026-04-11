@@ -95,8 +95,8 @@ function SubdomainPage({ subdomain }) {
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   {!webinar.bannerImage && (
-                    <span style={{ fontSize: "48px" }}>
-                      {webinar.categories?.[0] === "Technology" ? "💻" : webinar.categories?.[0] === "Marketing" ? "📢" : webinar.categories?.[0] === "Business" ? "💼" : webinar.categories?.[0] === "Finance" ? "📊" : webinar.categories?.[0] === "Health" ? "🧘" : "🎤"}
+                    <span style={{ fontSize: "24px", fontWeight: 700, color: "#6574e9", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {(webinar.categories?.[0] || webinar.title || "W").substring(0, 2)}
                     </span>
                   )}
                 </div>

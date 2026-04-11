@@ -1,5 +1,23 @@
 /* ===== ENROLLIFY ADMIN DASHBOARD — LIGHT THEME ===== */
 
+/* Status dot indicators (replaces emoji circles) */
+.status-dot-inline {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.dot-green { background: #10b981; }
+.dot-red { background: #ef4444; }
+.dot-orange { background: #f59e0b; }
+.dot-blue { background: #3b82f6; }
+.dot-gray { background: #9ca3af; }
+.dot-green, .dot-red, .dot-orange, .dot-blue { box-shadow: 0 0 4px currentColor; }
+.blink { animation: dotBlink 1.5s ease-in-out infinite; }
+@keyframes dotBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
 .dashboard-home {
   display: flex;
   flex-direction: column;

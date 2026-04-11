@@ -25,6 +25,7 @@ export const AVAILABLE_TEMPLATES = [
   { key: "classic", name: "Classic", description: "Clean, professional layout with hero section and speaker showcase" },
   { key: "modern", name: "Modern Dark", description: "Dark luxury theme with split-screen hero and glassmorphism cards" },
   { key: "bold", name: "Bold", description: "Bold editorial style with warm gradients and large typography" },
+  
 ];
 
 export const getTemplateComponent = (key) => {

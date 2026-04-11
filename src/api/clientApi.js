@@ -46,8 +46,8 @@ export const updateClientProfileAPI = async (profileData) => {
   const token = getAuthToken();
   if (!token) throw new Error("Missing authentication token.");
 
-  const response = await fetch(API_BASE_URL, {
-    method: "POST",
+  const response = await fetch(`${API_BASE_URL}/me`, {
+    method: "PUT",
     headers: {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json"

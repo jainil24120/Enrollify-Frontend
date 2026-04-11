@@ -18,7 +18,10 @@ function UserForm() {
   const token = localStorage.getItem("token");
   const storedUser = (() => {
     try {
-      return JSON.parse(localStorage.getItem("userData")) || null;
+      const u = JSON.parse(localStorage.getItem("userData")) || null;
+      // Don't pre-fill if logged in as client/admin (they're not the attendee)
+      if (u && (u.role === "client" || u.role === "admin")) return null;
+      return u;
     } catch {
       return null;
     }
@@ -208,9 +211,16 @@ function UserForm() {
               ? "Thank you for your payment. You will receive a confirmation email with the joining details shortly."
               : "You have successfully registered for free. The joining link will be sent to your email."}
           </p>
-          <button className="back-home-btn" onClick={() => window.location.href = "/"}>
-            Go Back to Home
-          </button>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+            {webinarData?.slug && (
+              <button className="back-home-btn" onClick={() => window.location.href = `/w/${webinarData.slug}`}>
+                View Webinar Page
+              </button>
+            )}
+            <button className="back-home-btn" style={{ background: "#f3f4f6", color: "#374151" }} onClick={() => window.location.href = "/"}>
+              Go to Home
+            </button>
+          </div>
         </div>
       </div>
     );

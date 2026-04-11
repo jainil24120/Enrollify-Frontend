@@ -77,6 +77,24 @@ export const createSubscriptionPlan = async (planData, token) => {
   return await response.json();
 };
 
+export const getAdminSettings = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/settings`, {
+    headers: getAdminHeaders(token),
+  });
+  if (!response.ok) throw new Error("Failed to fetch settings");
+  return await response.json();
+};
+
+export const saveAdminSettings = async (settings, token) => {
+  const response = await fetch(`${API_BASE_URL}/settings`, {
+    method: "PUT",
+    headers: getAdminHeaders(token),
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) throw new Error("Failed to save settings");
+  return await response.json();
+};
+
 export const updateSubscriptionPlan = async (planId, planData, token) => {
   const response = await fetch(`${API_BASE}/api/subscriptions/${planId}`, {
     method: "PUT",

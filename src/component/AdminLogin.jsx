@@ -101,6 +101,7 @@ function AdminLogin() {
         localStorage.setItem("isAdminAuth", "true");
         localStorage.setItem("adminEmail", data.email);
         if (result.token) localStorage.setItem("token", result.token);
+        if (result.user) localStorage.setItem("userData", JSON.stringify(result.user));
 
         setIsLoading(false);
         navigate("/admin-dashboard");

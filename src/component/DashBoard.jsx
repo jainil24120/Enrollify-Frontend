@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import "./DashBoard.css";
-import { Search, Filter, MessageCircle, X, Download, Plus, LayoutGrid, List, Link, Edit2, BarChart2, Copy, MoreVertical, Wallet, Landmark, ArrowUpRight, DownloadCloud, CreditCard, Settings, Link2, ShieldCheck, RefreshCw, Mail, MessageSquare, Activity, CheckCircle2, User, Globe, Palette, Bell, Lock, Trash2, FileText, RotateCcw } from "lucide-react";
+import { Search, Filter, MessageCircle, X, Download, Plus, LayoutGrid, List, Link, Edit2, BarChart2, Copy, MoreVertical, Wallet, Landmark, ArrowUpRight, DownloadCloud, CreditCard, Settings, Link2, ShieldCheck, RefreshCw, Mail, MessageSquare, Activity, CheckCircle2, User, Globe, Palette, Bell, Lock, Trash2, FileText, RotateCcw, AlertCircle } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI, getClientAudienceAPI, getClientSubscriptionAPI, getClientProfileAPI, updateClientProfileAPI } from "../api/clientApi";
 import { API_BASE } from "../api/config.js";
 import logoImg from "../assets/Logo.jpeg";
 import TemplateGallery from "./TemplateGallery";
+import WhatsAppPanel from "./WhatsAppPanel";
 
 
 const generateZeroTrend = (days = 30) => {
@@ -52,7 +53,7 @@ class ErrorBoundary extends React.Component {
         if (this.state.hasError) {
             return (
                 <div className="section-error-fallback" style={{ padding: '60px 20px', textAlign: 'center', background: '#f8f9fb', color: '#1a1a35', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
+                    <div style={{ marginBottom: '20px' }}><AlertCircle size={48} color="#f87171" /></div>
                     <h2 style={{ fontSize: '24px', marginBottom: '10px', color: '#f87171' }}>Rendering Error</h2>
                     <p style={{ color: '#6b7280', maxWidth: '500px', marginBottom: '30px' }}>
                         This section failed to display due to a data processing error.
@@ -79,14 +80,15 @@ class ErrorBoundary extends React.Component {
 
 const Sidebar = ({ activeTab, setActiveTab, selectedPlan, onLogout }) => {
     const tabs = [
-        { name: "Overview", icon: "🏠" },
-        { name: "Analytics", icon: "📊" },
-        { name: "Webinars", icon: "🎥" },
-        { name: "Templates", icon: "🎨" },
-        { name: "Audience", icon: "👥" },
-        { name: "Revenue", icon: "💰" },
-        { name: "Billing", icon: "💳" },
-        { name: "Settings", icon: "⚙" }
+        { name: "Overview", icon: <LayoutGrid size={18} /> },
+        { name: "Analytics", icon: <BarChart2 size={18} /> },
+        { name: "Webinars", icon: <Activity size={18} /> },
+        { name: "Templates", icon: <Palette size={18} /> },
+        { name: "Audience", icon: <User size={18} /> },
+        { name: "WhatsApp", icon: <MessageSquare size={18} /> },
+        { name: "Revenue", icon: <ArrowUpRight size={18} /> },
+        { name: "Billing", icon: <CreditCard size={18} /> },
+        { name: "Settings", icon: <Settings size={18} /> }
     ];
 
     const visibleTabs = selectedPlan ? tabs : [tabs[0]];
@@ -131,6 +133,7 @@ const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
                 {activeTab === "Overview" && "Client Dashboard"}
                 {activeTab === "Analytics" && "Analytics & Conversion"}
                 {activeTab === "Audience" && "Audience CRM"}
+                {activeTab === "WhatsApp" && "WhatsApp Automation"}
                 {activeTab === "Webinars" && "Webinars"}
                 {activeTab === "Templates" && "Template Gallery"}
                 {activeTab === "Revenue" && "Revenue & Payouts"}
@@ -148,7 +151,7 @@ const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
                     )}
                 </div>
                 <div className="profile-info-text">
-                    <span className="welcome-tag">Welcome Back 👋</span>
+                    <span className="welcome-tag">Welcome Back</span>
                     <span className="user-display-name">{userName}</span>
                 </div>
             </div>
@@ -156,7 +159,7 @@ const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
     );
 };
 
-const OverviewSection = ({ selectedPlan, selectPlan, subdomain, userName, clientOrg, setActiveTab, dashboardStats, subscriptionData, audienceList = [], backendPlans = [] }) => {
+const OverviewSection = ({ selectedPlan, selectPlan, subdomain, userName, clientOrg, setActiveTab, dashboardStats, subscriptionData, audienceList = [], backendPlans = [], webinarStats = [] }) => {
     const plans = backendPlans.map((plan) => {
         const f = plan.features || {};
         const features = [];
@@ -194,18 +197,25 @@ const OverviewSection = ({ selectedPlan, selectPlan, subdomain, userName, client
                     <div className="stat-card"><h3>Total Webinars</h3><h2>{dashboardStats?.totalWebinars || dashboardStats?.total_webinars || 0}</h2></div>
                     <div className="stat-card"><h3>Total Revenue</h3><h2>₹{(dashboardStats?.totalRevenue || dashboardStats?.total_revenue || 0).toLocaleString()}</h2></div>
                     <div className="stat-card">
-                        <h3>Live Enrollment Link 🔗</h3>
-                        <div className="link-card-content">
-                            <span className="tiny-link">https://{subdomain}.enrollify.in/template</span>
-                            <button className="copy-mini-btn" onClick={() => {
-                                navigator.clipboard.writeText(`https://${subdomain}.enrollify.in/template`);
-                                alert("Link Copied!");
-                            }}>Copy</button>
-                        </div>
+                        <h3>Live Enrollment Link <Link2 size={14} style={{ display: "inline" }} /></h3>
+                        {webinarStats.length > 0 ? (
+                            <div className="link-card-content" style={{ flexDirection: "column", alignItems: "flex-start", gap: "6px" }}>
+                                <span className="tiny-link" style={{ fontSize: "0.72rem", lineHeight: "1.3" }}>
+                                    {window.location.origin}/w/{webinarStats[0]?.slug || ""}
+                                </span>
+                                <button className="copy-mini-btn" onClick={() => {
+                                    const link = `${window.location.origin}/w/${webinarStats[0]?.slug || ""}`;
+                                    navigator.clipboard.writeText(link);
+                                    alert("Link Copied!");
+                                }}>Copy Link</button>
+                            </div>
+                        ) : (
+                            <p style={{ fontSize: "0.78rem", color: "#6b7280" }}>Create a webinar to get your link</p>
+                        )}
                     </div>
-                    <div className="stat-card"><h3>Conversion Rate</h3><h2>0%</h2></div>
+                    <div className="stat-card"><h3>Total Registrations</h3><h2>{(dashboardStats?.totalUsers || dashboardStats?.total_registrations || 0).toLocaleString()}</h2></div>
                     <div className="stat-card profile-summary-card" onClick={() => setActiveTab("Settings")} style={{ cursor: 'pointer' }}>
-                        <h3>Client Profile 👤</h3>
+                        <h3>Client Profile</h3>
                         <div className="profile-summary-content">
                             <span className="profile-name-tag">{userName || "Guest Client"}</span>
                             <span className="profile-org-tag">{clientOrg || "Personal Account"}</span>
@@ -218,11 +228,11 @@ const OverviewSection = ({ selectedPlan, selectPlan, subdomain, userName, client
             <div className={`plan-section ${!selectedPlan ? 'full-pricing' : ''}`}>
                 {!selectedPlan && (
                     <div className="no-plan-welcome">
-                        <h2>Welcome to Enrollify! 👋</h2>
+                        <h2>Welcome to Enrollify!</h2>
                         <p>Choose a plan to unlock your dashboard features and start growing your webinars.</p>
                     </div>
                 )}
-                <h2 className="pricing-title">{selectedPlan ? "Manage Your Growth Plan 🚀" : "Select a Growth Plan 🚀"}</h2>
+                <h2 className="pricing-title">{selectedPlan ? "Manage Your Growth Plan " : "Select a Growth Plan "}</h2>
                 <div className="pricing-container">
                     {plans.map((plan) => (
                         <div
@@ -289,7 +299,7 @@ const AnalyticsSection = ({ selectedPlan, setActiveTab, dashboardStats, webinarS
         </div>
 
         <div className="analytics-chart-box">
-            <h2>Sales & Conversion Funnel 🚀</h2>
+            <h2>Sales & Conversion Funnel </h2>
             <p className="subtitle">Traffic vs Registrations over the last 30 days</p>
             <div className="chart-container">
                 <ResponsiveContainer width="100%" height={320}>
@@ -396,7 +406,7 @@ const AnalyticsSection = ({ selectedPlan, setActiveTab, dashboardStats, webinarS
                             <td>
                                 <div className="student-info-cell">
                                     <div className="thumbnail-placeholder emoji-thumb">
-                                        {'📈'}
+                                        <BarChart2 size={14} />
                                     </div>
                                     <div className="student-details">
                                         <span className="student-name">{wb.title || wb.name || "Untitled Webinar"}</span>
@@ -499,8 +509,8 @@ const WebinarsSection = ({ webinarSearch, setWebinarSearch, webinarFilter, setWe
                     .filter(w => w && (w.title || '').toLowerCase().includes(webinarSearch.toLowerCase()))
                     .map((webinar) => webinar && (
                         <div key={webinar.id || webinar._id} className={`webinar-card ${webinar.status === 'Draft' ? 'is-draft' : ''}`}>
-                            <div className="card-banner" style={{ background: webinar.bannerImage || webinar.thumbnail || '#e5e7eb', backgroundSize: 'cover' }}>
-                                <span className="banner-emoji">{webinar.emoji || '🎥'}</span>
+                            <div className="card-banner" style={{ background: (webinar.bannerImage || webinar.thumbnail) ? `url(${(() => { const img = webinar.bannerImage || webinar.thumbnail; return img.startsWith('http') || img.startsWith('data:') ? img : API_BASE + img; })()}) center/cover no-repeat` : '#e5e7eb' }}>
+                                <span className="banner-emoji"><Activity size={20} /></span>
                                 <div className={`status-badge status-${(webinar.status || 'Published').toLowerCase()}`}>
                                     <span className="status-dot"></span>
                                     {webinar.status || 'Published'}
@@ -549,6 +559,11 @@ const AudienceSection = ({ searchQuery, setSearchQuery, selectedWebinar, setSele
     const totalRevenue = audienceList.reduce((acc, s) => acc + (s.totalSpent || s.amountPaid || 0), 0);
     const avgLTV = totalLeads > 0 ? Math.round(totalRevenue / totalLeads) : 0;
 
+    // Extract unique webinar names from audience data for dynamic filter
+    const webinarNames = [...new Set(
+        audienceList.flatMap(s => (s.webinars || []).map(w => w.title)).filter(Boolean)
+    )];
+
     return (
         <div className="crm-section">
             <div className="crm-kpi-grid">
@@ -556,7 +571,7 @@ const AudienceSection = ({ searchQuery, setSearchQuery, selectedWebinar, setSele
                     { title: "Total Leads / Students", value: totalLeads.toLocaleString(), spark: "spark-blue" },
                     { title: "Total Paid Customers", value: paidCustomers.toLocaleString(), spark: "spark-purple" },
                     { title: "Avg. Lifetime Value (LTV)", value: `₹${avgLTV.toLocaleString()}`, spark: "spark-green" },
-                    { title: "Engagement Score", value: totalLeads > 0 ? "High 🔥" : "0%", spark: "spark-gold" }
+                    { title: "Engagement Score", value: totalLeads > 0 ? "High" : "0%", spark: "spark-gold" }
                 ].map((kpi, i) => (
                     <div key={i} className="crm-kpi-card">
                         <h4>{kpi.title}</h4>
@@ -579,8 +594,9 @@ const AudienceSection = ({ searchQuery, setSearchQuery, selectedWebinar, setSele
                         <Filter className="filter-icon" size={18} />
                         <select value={selectedWebinar} onChange={(e) => setSelectedWebinar(e.target.value)}>
                             <option value="All Webinars">All Webinars</option>
-                            <option value="Marketing Masterclass">Marketing Masterclass</option>
-                            <option value="UI/UX Blueprint">UI/UX Blueprint</option>
+                            {webinarNames.map(name => (
+                                <option key={name} value={name}>{name}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -593,7 +609,7 @@ const AudienceSection = ({ searchQuery, setSearchQuery, selectedWebinar, setSele
                         <tr>
                             <th>Student Info</th>
                             <th>Phone Number</th>
-                            <th>Activity</th>
+                            <th>Webinar</th>
                             <th>Total Spent</th>
                             <th>Joined Date</th>
                         </tr>
@@ -610,13 +626,14 @@ const AudienceSection = ({ searchQuery, setSearchQuery, selectedWebinar, setSele
                             })
                             .map((student, index) => {
                                 if (!student) return null;
-                                const studentName = (student.name || student.studentName || student.user_name || student.userName || student.full_name ||
+                                const studentName = (student.name || student.studentName ||
                                     ((student.firstName || student.firstname || student.first_name || '') + ' ' +
                                         (student.lastName || student.lastname || student.last_name || '')).trim() ||
                                     'Guest User').trim();
-                                const studentEmail = student.email || student.user_email || student.userEmail || student.customerEmail || "N/A";
-                                const studentPhone = student.phone || student.phoneNumber || student.user_phone || student.mobile || "N/A";
-                                const joinedDate = student.createdAt || student.registrationDate || student.joinedDate || student.date;
+                                const studentEmail = student.email || "N/A";
+                                const studentPhone = student.phone || student.phoneNumber || student.mobile || "N/A";
+                                const joinedDate = student.createdAt || student.registrationDate || student.date;
+                                const webinarTitles = (student.webinars || []).map(w => w.title).filter(Boolean);
 
                                 return (
                                     <tr key={student._id || student.id || index} className="crm-table-row" onClick={() => setDrawerStudent({ ...student, name: studentName, email: studentEmail, phone: studentPhone, avatarColor: student.avatarColor || '#6574e9' })}>
@@ -632,8 +649,18 @@ const AudienceSection = ({ searchQuery, setSearchQuery, selectedWebinar, setSele
                                             </div>
                                         </td>
                                         <td className="phone-cell">{studentPhone}</td>
-                                        <td><span className="pill-badge">{student.webinarsAttended || student.eventsCount || 1} Webinars</span></td>
-                                        <td className="spent-cell">₹{student.totalSpent || student.amountPaid || student.paid_amount || student.amount || 0}</td>
+                                        <td>
+                                            {webinarTitles.length > 0 ? (
+                                                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                                    {webinarTitles.map((t, i) => (
+                                                        <span key={i} className="pill-badge" style={{ fontSize: "11px", display: "inline-block" }}>{t}</span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="pill-badge">{student.webinarsAttended || 1} Webinars</span>
+                                            )}
+                                        </td>
+                                        <td className="spent-cell">{(student.totalSpent || student.amountPaid || 0) > 0 ? `₹${student.totalSpent || student.amountPaid || 0}` : 'Free'}</td>
                                         <td className="date-cell">{joinedDate ? new Date(joinedDate).toLocaleDateString() : "N/A"}</td>
                                     </tr>
                                 )
@@ -657,7 +684,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
             <div className="vault-kpi-grid">
                 {[
                     { title: "Gross Revenue", value: `₹${grossRevenue.toLocaleString()}`, spark: "" },
-                    { title: "Net Earnings", value: `₹${netEarnings.toLocaleString()}`, subtitle: "After 5% Platform Fee", spark: "highlight-card" },
+                    { title: "Net Earnings", value: `₹${netEarnings.toLocaleString()}`, subtitle: `After ${feePercent}% Platform Fee`, spark: "highlight-card" },
                     { title: "Available to Withdraw", value: `₹${availableToWithdraw.toLocaleString()}`, spark: "core-glow-green", color: "revenue-neon-green" },
                     { title: "Pending Clearance", value: `₹${pendingClearance.toLocaleString()}`, spark: "core-glow-yellow", color: "revenue-neon-yellow" }
                 ].map((kpi, i) => (
@@ -672,7 +699,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
             </div>
 
             <div className="analytics-chart-box">
-                <div className="chart-header"><h2>Cashflow 💸</h2><p className="subtitle">Daily earnings over the last 30 days</p></div>
+                <div className="chart-header"><h2>Cashflow </h2><p className="subtitle">Daily earnings over the last 30 days</p></div>
                 <div className="chart-container">
                     <ResponsiveContainer width="100%" height={280}>
                         <BarChart data={(dashboardStats?.revenueTrend && dashboardStats.revenueTrend.length > 0) ? dashboardStats.revenueTrend : generateZeroTrend(7)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -732,7 +759,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
                     </div>
                     <div className="wallet-action-box">
                         <div className="available-wallet-bal"><span>Available Balance</span><h2 className="mono-space revenue-neon-green">₹{Math.floor(netEarnings)}</h2></div>
-                        <button className="primary-glow-btn request-payout-btn">💸 Request Payout</button>
+                        <button className="primary-glow-btn request-payout-btn"> Request Payout</button>
                     </div>
                 </div>
             </div>
@@ -743,7 +770,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
 
 
 
-const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActiveTab, paymentMethods, onEditPayment, onAddPayment, subscriptionData, backendPlans = [] }) => (
+const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActiveTab, paymentMethods, onEditPayment, onAddPayment, subscriptionData, backendPlans = [], dashboardStats = {} }) => (
     <div className="billing-section">
         <div className="billing-hero-card">
             <div className="billing-hero-header">
@@ -786,11 +813,16 @@ const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActive
             </div>
 
             <div className="usage-grid">
-                {[
-                    { label: "Active Webinars", value: "12 / 20", percent: 60, color: "neon-blue" },
-                    { label: "Monthly Attendees", value: "3,840 / 5,000", percent: 76, color: "neon-purple" },
-                    { label: "Storage Used", value: "1.2GB / 5GB", percent: 24, color: "neon-green" }
-                ].map((u, i) => (
+                {(() => {
+                    const webinarLimit = selectedPlan === "Basic" ? 1 : selectedPlan === "Growth" ? 5 : selectedPlan === "Elite" ? 999 : 0;
+                    const currentWebinars = dashboardStats?.totalWebinars || 0;
+                    const totalRegistrations = dashboardStats?.totalUsers || 0;
+                    return [
+                        { label: "Active Webinars", value: `${currentWebinars} / ${webinarLimit === 999 ? "∞" : webinarLimit}`, percent: webinarLimit > 0 ? Math.min(100, Math.round((currentWebinars / webinarLimit) * 100)) : 0, color: "neon-blue" },
+                        { label: "Total Registrations", value: `${totalRegistrations.toLocaleString()}`, percent: Math.min(100, totalRegistrations > 0 ? 50 : 0), color: "neon-purple" },
+                        { label: "Revenue Generated", value: `₹${(dashboardStats?.totalRevenue || 0).toLocaleString()}`, percent: Math.min(100, (dashboardStats?.totalRevenue || 0) > 0 ? 40 : 0), color: "neon-green" }
+                    ];
+                })().map((u, i) => (
                     <div key={i} className="usage-item">
                         <div className="usage-info"><span>{u.label}</span><span>{u.value}</span></div>
                         <div className="progress-bar-bg small"><div className={`progress-fill ${u.color}`} style={{ width: `${u.percent}%` }}></div></div>
@@ -846,7 +878,7 @@ const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActive
     </div>
 );
 
-const SettingsSection = ({ activeSettingTab, setActiveSettingTab, isSavingSettings, handleSaveSettings, subdomain, setSubdomain, isSubdomainAvailable, brandColor, setBrandColor, showToast, profilePic, handleProfilePicChange, userName, setUserName, payoutUpi, setPayoutUpi, payoutUpiError, payoutAccount, setPayoutAccount, payoutAccountError, payoutIfsc, setPayoutIfsc, payoutIfscError, clientFirstName, setClientFirstName, clientLastName, setClientLastName, clientOrg, setClientOrg, clientPhone, setClientPhone, clientEmail, setClientEmail, clientGst, setClientGst, clientPaymentMode, setClientPaymentMode, clientAccountHolder, setClientAccountHolder, clientAccountNumber, setClientAccountNumber, clientIfsc, setClientIfsc, clientBankName, setClientBankName, clientUpi, setClientUpi, passwordData, setPasswordData, passwordMsg, handleChangePassword, isChangingPassword, notifRegistration, setNotifRegistration, notifDailySummary, setNotifDailySummary }) => (
+const SettingsSection = ({ activeSettingTab, setActiveSettingTab, isSavingSettings, handleSaveSettings, subdomain, setSubdomain, isSubdomainAvailable, brandColor, setBrandColor, showToast, profilePic, handleProfilePicChange, userName, setUserName, payoutUpi, setPayoutUpi, payoutUpiError, payoutAccount, setPayoutAccount, payoutAccountError, payoutIfsc, setPayoutIfsc, payoutIfscError, clientFirstName, setClientFirstName, clientLastName, setClientLastName, clientOrg, setClientOrg, clientPhone, setClientPhone, clientEmail, setClientEmail, clientGst, setClientGst, clientBio, setClientBio, clientPaymentMode, setClientPaymentMode, clientAccountHolder, setClientAccountHolder, clientAccountNumber, setClientAccountNumber, clientIfsc, setClientIfsc, clientBankName, setClientBankName, clientUpi, setClientUpi, passwordData, setPasswordData, passwordMsg, handleChangePassword, isChangingPassword, notifRegistration, setNotifRegistration, notifDailySummary, setNotifDailySummary }) => (
     <div className="settings-tab-layout">
         <div className="settings-page-header">
             <h1>Settings - <span className="text-muted">Manage your workspace</span></h1>
@@ -895,7 +927,7 @@ const SettingsSection = ({ activeSettingTab, setActiveSettingTab, isSavingSettin
                                 onChange={handleProfilePicChange}
                             />
                             <div className="upload-info">
-                                <p className="font-semibold text-white">Profile Picture</p>
+                                <p className="font-semibold">Profile Picture</p>
                                 <p className="text-xs text-muted">JPG, GIF or PNG. Max size 2MB</p>
                             </div>
                         </div>
@@ -912,11 +944,11 @@ const SettingsSection = ({ activeSettingTab, setActiveSettingTab, isSavingSettin
                             </div>
                             <div className="form-group">
                                 <label>Email Address</label>
-                                <input type="email" placeholder="divas@enrollify.com" className="neon-input" />
+                                <input type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} placeholder="you@example.com" className="neon-input" />
                             </div>
                             <div className="form-group full-width">
                                 <label>Bio</label>
-                                <textarea placeholder="Tell your students a bit about yourself..." className="neon-input settings-bio-area"></textarea>
+                                <textarea value={clientBio} onChange={(e) => setClientBio(e.target.value)} placeholder="Tell your students a bit about yourself..." className="neon-input settings-bio-area"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1034,7 +1066,7 @@ const SettingsSection = ({ activeSettingTab, setActiveSettingTab, isSavingSettin
                                 <label>UPI ID</label>
                                 <input
                                     type="text"
-                                    placeholder="divas@okhdfc"
+                                    placeholder="yourname@upi"
                                     className={`neon-input ${payoutUpiError ? 'input-error' : ''}`}
                                     value={payoutUpi}
                                     onChange={(e) => setPayoutUpi(e.target.value)}
@@ -1215,11 +1247,9 @@ const PaymentModal = ({ show, onClose, onSave, editingMethod }) => {
 };
 
 const DashBoard = () => {
-    console.log("--- DASHBOARD RENDER ---", { time: new Date().toISOString() });
-    const [selectedPlan, setSelectedPlan] = useState(null);
+    const [selectedPlan, setSelectedPlan] = useState(() => localStorage.getItem("activePlan") || null);
     const [isProfileMissing, setIsProfileMissing] = useState(false);
     const [activeTab, setActiveTab] = useState("Overview");
-    console.log("Active Tab:", activeTab);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedWebinar, setSelectedWebinar] = useState("All Webinars");
     const [drawerStudent, setDrawerStudent] = useState(null);
@@ -1236,18 +1266,17 @@ const DashBoard = () => {
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [editingPaymentMethod, setEditingPaymentMethod] = useState(null);
 
+    // Platform banner from admin
+    const [platformBanner, setPlatformBanner] = useState("");
+
     // DashBoard stats state
     const [dashboardStats, setDashboardStats] = useState({
-        totalWebinars: 0,
-        totalUsers: 0,
-        totalRevenue: 0,
-        activeWebinars: 0
+        totalWebinars: 0, totalUsers: 0, totalRevenue: 0, activeWebinars: 0
     });
     const [webinarStats, setWebinarStats] = useState([]);
     const [audienceList, setAudienceList] = useState([]);
     const [subscriptionData, setSubscriptionData] = useState(null);
     const [backendPlans, setBackendPlans] = useState([]);
-    const [showDebug, setShowDebug] = useState(false);
 
     const getComplex = (res) => {
         if (!res) return null;
@@ -1289,6 +1318,15 @@ const DashBoard = () => {
         const fetchDashboardData = async () => {
 
             try {
+                // Fetch platform banner from admin
+                try {
+                    const bannerRes = await fetch(`${API_BASE}/api/admin/public/banner`);
+                    if (bannerRes.ok) {
+                        const bannerData = await bannerRes.json();
+                        if (bannerData.banner) setPlatformBanner(bannerData.banner);
+                    }
+                } catch (e) {}
+
                 // Fetch subscription plans from backend
                 try {
                     const plansRes = await fetch(`${API_BASE}/api/subscriptions`);
@@ -1322,7 +1360,7 @@ const DashBoard = () => {
 
                 const dashboardResStatus = dashboardRes.status === "rejected" ? dashboardRes.reason?.message : "";
                 if (dashboardResStatus && dashboardResStatus.includes("create your client profile first")) {
-                    console.warn("--- PROFILE MISSING DETECTED ---");
+                    // Profile missing — show setup prompt
                     setIsProfileMissing(true);
                 }
 
@@ -1331,6 +1369,13 @@ const DashBoard = () => {
             }
         };
         fetchDashboardData();
+
+        // Refetch when user returns to the tab (handles stale data)
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") fetchDashboardData();
+        };
+        document.addEventListener("visibilitychange", handleVisibility);
+        return () => document.removeEventListener("visibilitychange", handleVisibility);
     }, []);
 
     // Load payment methods from subscription data
@@ -1374,11 +1419,29 @@ const DashBoard = () => {
         setIsPaymentModalOpen(true);
     };
 
-    // Set selected plan from backend subscription data
+    // Set selected plan from backend subscription data and cache it
     useEffect(() => {
         if (subscriptionData && subscriptionData.subscription) {
-            const planName = subscriptionData.subscription.name;
-            if (planName) setSelectedPlan(planName);
+            // Check if subscription is still active and not expired
+            const isActive = subscriptionData.isActive !== false;
+            const isExpired = subscriptionData.subscriptionValidTill
+                && new Date(subscriptionData.subscriptionValidTill) < new Date();
+
+            if (isActive && !isExpired) {
+                const planName = subscriptionData.subscription.name;
+                if (planName) {
+                    setSelectedPlan(planName);
+                    localStorage.setItem("activePlan", planName);
+                }
+            } else {
+                // Subscription expired or inactive — clear plan
+                setSelectedPlan(null);
+                localStorage.removeItem("activePlan");
+            }
+        } else if (subscriptionData && !subscriptionData.subscription) {
+            // No subscription at all — clear cached plan
+            setSelectedPlan(null);
+            localStorage.removeItem("activePlan");
         }
     }, [subscriptionData]);
 
@@ -1397,7 +1460,7 @@ const DashBoard = () => {
     const [activeSettingTab, setActiveSettingTab] = useState("General");
     const [isSavingSettings, setIsSavingSettings] = useState(false);
     const [showToast, setShowToast] = useState(false);
-    const [subdomain, setSubdomain] = useState("divasgupta");
+    const [subdomain, setSubdomain] = useState("");
     const [brandColor, setBrandColor] = useState("#6574e9");
     const [isSubdomainAvailable, setIsSubdomainAvailable] = useState(true);
     const [payoutUpi, setPayoutUpi] = useState("");
@@ -1420,6 +1483,7 @@ const DashBoard = () => {
     const [clientIfsc, setClientIfsc] = useState("");
     const [clientBankName, setClientBankName] = useState("");
     const [clientUpi, setClientUpi] = useState("");
+    const [clientBio, setClientBio] = useState("");
 
     // Profile state
     const [profilePic, setProfilePic] = useState(localStorage.getItem("userProfilePic") || null);
@@ -1493,6 +1557,7 @@ const DashBoard = () => {
                     if (profile.user?.email) setClientEmail(profile.user.email);
                     if (profile.gstNumber) setClientGst(profile.gstNumber);
                     if (profile.subdomain) setSubdomain(profile.subdomain);
+                    if (profile.bio) setClientBio(profile.bio);
                     if (profile.upiId) {
                         setClientUpi(profile.upiId);
                         setPayoutUpi(profile.upiId);
@@ -1516,7 +1581,7 @@ const DashBoard = () => {
                 }
             } catch (err) {
                 // Profile might not exist yet - that's OK
-                console.log("No client profile found, using defaults");
+                // No client profile yet — using defaults
             }
         };
         loadProfile();
@@ -1553,15 +1618,23 @@ const DashBoard = () => {
         }
     };
 
-    // Subdomain Availability Simulator
+    // Subdomain Availability Check (real backend call)
+    const [originalSubdomain] = useState(() => "");
     useEffect(() => {
-        if (!subdomain) return;
-        setIsSubdomainAvailable(null); // Loading state if needed
-        const timer = setTimeout(() => {
-            // Simulate check: 'admin', 'google', 'meta' are taken
-            const taken = ['admin', 'google', 'meta', 'test'];
-            setIsSubdomainAvailable(!taken.includes(subdomain.toLowerCase()));
-        }, 300);
+        if (!subdomain || subdomain.length < 3) { setIsSubdomainAvailable(null); return; }
+        const timer = setTimeout(async () => {
+            try {
+                const token = localStorage.getItem("token") || "";
+                const res = await fetch(`${API_BASE}/api/clientprofile/check-subdomain?subdomain=${subdomain.toLowerCase()}`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const data = await res.json();
+                // If it's the user's own subdomain, it's available
+                setIsSubdomainAvailable(data.available || data.isOwn || false);
+            } catch {
+                setIsSubdomainAvailable(null);
+            }
+        }, 500);
         return () => clearTimeout(timer);
     }, [subdomain]);
 
@@ -1603,6 +1676,7 @@ const DashBoard = () => {
                 Organization_Name: clientOrg,
                 phone: clientPhone,
                 gstNumber: clientGst,
+                bio: clientBio,
                 upiId: payoutUpi || clientUpi,
                 bankDetails: {
                     accountHolderName: clientAccountHolder,
@@ -1638,8 +1712,9 @@ const DashBoard = () => {
         const matchesSearch = studentName.toLowerCase().includes(searchLower) ||
             (student.email || '').toLowerCase().includes(searchLower) ||
             (student.phone || '').includes(searchQuery);
-        // Simple mock filter for webinar dropdown
-        const matchesWebinar = selectedWebinar === "All Webinars" || (student.webinarsAttended && student.webinarsAttended > 0);
+        // Filter by actual webinar title from the student's webinars array
+        const matchesWebinar = selectedWebinar === "All Webinars" ||
+            (student.webinars && student.webinars.some(w => w.title === selectedWebinar));
         return matchesSearch && matchesWebinar;
     });
 
@@ -1653,10 +1728,17 @@ const DashBoard = () => {
                 localStorage.removeItem("currentWebinarId");
                 localStorage.removeItem("webinarData");
                 localStorage.removeItem("subscriptionId");
-                window.location.href = "/signup";
+                localStorage.removeItem("activePlan");
+                sessionStorage.clear();
+                window.location.href = "/signin";
             }} />
 
             <div className="main-content">
+                {platformBanner && (
+                    <div style={{ padding: "12px 20px", background: "linear-gradient(135deg, #6574e9, #4f5cd4)", color: "#fff", borderRadius: "10px", margin: "0 0 16px 0", fontSize: "0.88rem", fontWeight: "500", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Bell size={16} /> {platformBanner}
+                    </div>
+                )}
                 <Topbar
                     activeTab={activeTab}
                     profilePic={profilePic}
@@ -1677,6 +1759,7 @@ const DashBoard = () => {
                             subscriptionData={subscriptionData}
                             audienceList={audienceList}
                             backendPlans={backendPlans}
+                            webinarStats={webinarStats}
                         />
                     </ErrorBoundary>
                 )}
@@ -1716,6 +1799,12 @@ const DashBoard = () => {
                     </ErrorBoundary>
                 )}
 
+                {activeTab === "WhatsApp" && (
+                    <ErrorBoundary>
+                        <WhatsAppPanel isAdmin={false} />
+                    </ErrorBoundary>
+                )}
+
                 {activeTab === "Revenue" && (
                     <ErrorBoundary>
                         <RevenueSection dashboardStats={dashboardStats} setActiveTab={setActiveTab} audienceList={audienceList} subscriptionData={subscriptionData} />
@@ -1732,6 +1821,7 @@ const DashBoard = () => {
                             onAddPayment={openAddPayment}
                             subscriptionData={subscriptionData}
                             backendPlans={backendPlans}
+                            dashboardStats={dashboardStats}
                         />
                     </ErrorBoundary>
                 )}
@@ -1769,6 +1859,8 @@ const DashBoard = () => {
                             setClientEmail={setClientEmail}
                             clientGst={clientGst}
                             setClientGst={setClientGst}
+                            clientBio={clientBio}
+                            setClientBio={setClientBio}
                             clientPaymentMode={clientPaymentMode}
                             setClientPaymentMode={setClientPaymentMode}
                             clientAccountHolder={clientAccountHolder}
@@ -1803,34 +1895,6 @@ const DashBoard = () => {
                 editingMethod={editingPaymentMethod}
             />
 
-            {/* DEBUG OVERLAY */}
-            <button
-                onClick={() => setShowDebug(!showDebug)}
-                style={{ position: 'fixed', bottom: '20px', right: '20px', padding: '10px 15px', background: '#6574e9', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', zIndex: 10000, fontWeight: 'bold', boxShadow: '0 4px 15px rgba(101, 116, 233, 0.3)' }}
-            >
-                {showDebug ? "Close Debug ❌" : "Debug API Data 🛠️"}
-            </button>
-
-            {showDebug && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.97)', zIndex: 9999, padding: '50px', overflowY: 'auto', color: '#1a1a35', fontFamily: 'monospace', fontSize: '14px' }}>
-                    <h2 style={{ color: '#fff' }}>RAW API DATA (Client Dashboard)</h2>
-                    <div style={{ marginBottom: '20px' }}>
-                        <h4 style={{ color: '#6574e9' }}>Dashboard Stats:</h4>
-                        <pre>{JSON.stringify(dashboardStats, null, 2)}</pre>
-                    </div>
-                    <div style={{ marginBottom: '20px' }}>
-                        <h4 style={{ color: '#6574e9' }}>Webinar Stats:</h4>
-                        <pre>{JSON.stringify(webinarStats, null, 2)}</pre>
-                    </div>
-                    <div style={{ marginBottom: '20px' }}>
-                        <h4 style={{ color: '#6574e9' }}>Audience List:</h4>
-                        <pre>{JSON.stringify(audienceList, null, 2)}</pre>
-                    </div>
-                    <hr style={{ margin: '30px 0', borderColor: '#334155' }} />
-                    <h3>Token Used:</h3>
-                    <p style={{ wordBreak: 'break-all' }}>{localStorage.getItem("token")}</p>
-                </div>
-            )}
         </div>
     );
 };

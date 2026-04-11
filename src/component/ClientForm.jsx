@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import "./ClientForm.css";
 import { useNavigate } from "react-router-dom";
-import { registerClientProfileAPI, createOrderAPI, verifyPaymentAPI } from "../api/clientApi";
+import { registerClientProfileAPI, createOrderAPI, verifyPaymentAPI, getClientProfileAPI } from "../api/clientApi";
 import { API_BASE } from "../api/config.js";
 
 function ClientForm() {
@@ -13,6 +13,7 @@ function ClientForm() {
   const [success, setSuccess] = useState(false);
   const [errorStatus, setErrorStatus] = useState("");
   const [planIds, setPlanIds] = useState({});
+  const [isUpgrade, setIsUpgrade] = useState(false);
 
   // Fetch actual subscription plan IDs from backend
   useEffect(() => {
@@ -85,10 +86,57 @@ function ClientForm() {
   const [errors, setErrors] = useState({});
   const [subdomainStatus, setSubdomainStatus] = useState(null); // null | "checking" | "available" | "taken"
 
+  // Pre-fill form if client already has a profile (upgrade flow)
+  useEffect(() => {
+    const fetchExistingProfile = async () => {
+      try {
+        const profile = await getClientProfileAPI();
+        if (profile && (profile.first_name || profile.Organization_Name || profile.subdomain)) {
+          setIsUpgrade(true);
+          setFormData(prev => ({
+            ...prev,
+            firstName: profile.first_name || prev.firstName,
+            lastName: profile.last_name || prev.lastName,
+            organization: profile.Organization_Name || prev.organization,
+            subdomain: profile.subdomain || prev.subdomain,
+            phone: profile.phone || prev.phone,
+            email: profile.email || prev.email,
+            gst: profile.gstNumber || prev.gst,
+            accountHolder: profile.bankDetails?.accountHolder || prev.accountHolder,
+            accountNumber: profile.bankDetails?.accountNumber || prev.accountNumber,
+            ifsc: profile.bankDetails?.ifsc || prev.ifsc,
+            bankName: profile.bankDetails?.bankName || prev.bankName,
+            upi: profile.upiId || prev.upi,
+          }));
+          if (profile.upiId) setPaymentMode("upi");
+          // Mark subdomain as available since it's their own
+          if (profile.subdomain) setSubdomainStatus("available");
+        }
+      } catch (err) {
+        // No profile yet — first-time flow, keep form empty
+      }
+    };
+    fetchExistingProfile();
+  }, []);
+
+  // Track original subdomain for upgrade flow (so we don't re-check their own)
+  const [originalSubdomain, setOriginalSubdomain] = useState("");
+  useEffect(() => {
+    if (isUpgrade && formData.subdomain && !originalSubdomain) {
+      setOriginalSubdomain(formData.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+    }
+  }, [isUpgrade, formData.subdomain]);
+
   // Live subdomain availability check
   useEffect(() => {
     const raw = formData.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/\s+/g, "");
     if (raw.length < 3) { setSubdomainStatus(null); return; }
+
+    // Skip check if it's the user's own subdomain during upgrade
+    if (isUpgrade && raw === originalSubdomain) {
+      setSubdomainStatus("available");
+      return;
+    }
 
     setSubdomainStatus("checking");
     const timer = setTimeout(async () => {
@@ -330,7 +378,7 @@ function ClientForm() {
   if (success) {
     return (
       <div className="success-screen">
-        <h1>🎉 Payment Successful!</h1>
+        <h1>Payment Successful!</h1>
         <p>Your Enrollify account is activated.</p>
       </div>
     );
@@ -341,7 +389,16 @@ function ClientForm() {
 
       <div className="form-card">
 
-        <h1>Secure Registration & Payment 🔐</h1>
+        <button
+          onClick={() => navigate(-1)}
+          type="button"
+          style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#6574e9", cursor: "pointer", fontWeight: "600", fontSize: "14px", padding: "0", marginBottom: "16px" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+
+        <h1>{isUpgrade ? "Upgrade Plan" : "Secure Registration & Payment"}</h1>
 
         <div className="step-indicator">
           <div className="step active">1</div>
@@ -439,7 +496,7 @@ function ClientForm() {
           {errors.payment && <div className="error-box">{errors.payment}</div>}
           {errorStatus && <div className="error-box">{errorStatus}</div>}
 
-          <button type="submit">Proceed To Payment 💳</button>
+          <button type="submit">Proceed To Payment</button>
 
         </form>
       </div>

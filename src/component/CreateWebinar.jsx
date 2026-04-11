@@ -32,15 +32,27 @@ function CreateWebinar() {
     };
     const fetchTemplates = async () => {
       try {
-        const templates = await fetchMyTierTemplates();
-        setAvailableTemplates(Array.isArray(templates) ? templates : templates.data || []);
-        // Auto-select default template if none selected
+        const res = await fetchMyTierTemplates();
+        const list = Array.isArray(res) ? res : res.templates || res.data || [];
+        setAvailableTemplates(list);
         if (!selectedTemplate) {
-          const defaultT = (Array.isArray(templates) ? templates : templates.data || []).find(t => t.isDefault);
+          const defaultT = list.find(t => t.isDefault);
           if (defaultT) setSelectedTemplate(defaultT._id);
         }
       } catch (err) {
-        console.error("Failed to fetch templates:", err);
+        // If tier fetch fails, try fetching all templates as fallback
+        try {
+          const { fetchAllTemplates } = await import("../api/templateApi");
+          const allRes = await fetchAllTemplates();
+          const list = Array.isArray(allRes) ? allRes : allRes.data || [];
+          setAvailableTemplates(list);
+          if (!selectedTemplate && list.length > 0) {
+            const defaultT = list.find(t => t.isDefault);
+            if (defaultT) setSelectedTemplate(defaultT._id);
+          }
+        } catch (e) {
+          console.error("Failed to fetch templates:", e);
+        }
       }
     };
     fetchSub();
@@ -76,11 +88,11 @@ function CreateWebinar() {
     // Step 3: Content
     learningOutcomes: editData?.learningOutcomes || [""],
     targetAudience: editData?.targetAudience || [""],
-    agenda: editData?.agenda || [{ time: "", topic: "" }],
-    faqs: editData?.faqs || [{ question: "", answer: "" }],
+    agenda: editData?.agenda?.map(({ _id, ...rest }) => rest) || [{ time: "", topic: "" }],
+    faqs: editData?.faqs?.map(({ _id, ...rest }) => rest) || [{ question: "", answer: "" }],
 
     // Step 4: Social Proof
-    testimonials: editData?.testimonials || [{ name: "", role: "", text: "", image: "" }],
+    testimonials: editData?.testimonials?.map(({ _id, ...rest }) => rest) || [{ name: "", role: "", text: "", image: "" }],
     trustLogos: editData?.trustLogos || [""],
     ctaText: editData?.ctaText || "",
     bonusText: editData?.bonusText || "",
@@ -110,7 +122,15 @@ function CreateWebinar() {
 
   const removeArrayItem = (key, index) => {
     const arr = [...formData[key]];
-    if (arr.length <= 1) return;
+    // Required fields (outcomes, audience) must keep at least 1 item
+    const requiredArrays = ["learningOutcomes", "targetAudience"];
+    if (requiredArrays.includes(key) && arr.length <= 1) return;
+    // Optional fields can be fully emptied
+    if (arr.length <= 1 && !requiredArrays.includes(key)) {
+      // Remove last item — set to empty array
+      setFormData({ ...formData, [key]: [] });
+      return;
+    }
     arr.splice(index, 1);
     setFormData({ ...formData, [key]: arr });
   };
@@ -127,8 +147,7 @@ function CreateWebinar() {
     setFormData({ ...formData, [key]: arr });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setErrorMsg("");
 
     if (!subscriptionId) {
@@ -197,13 +216,18 @@ function CreateWebinar() {
         responseData = await createWebinarAPI(finalData, token);
       }
 
-      const webinarUrl = responseData?.webinarUrl || "";
-      const slug = responseData?.webinar?.slug || "";
-
-      if (webinarUrl || slug) {
-        setCreatedUrl(webinarUrl || `/w/${slug}`);
-      } else {
+      if (isEditMode) {
+        // After edit, go back to dashboard
         navigate("/dashboard");
+      } else {
+        // Show success page with webinar link
+        const slug = responseData?.webinar?.slug || "";
+        if (slug) {
+          // Use current origin so the link works in both dev and production
+          setCreatedUrl(`${window.location.origin}/w/${slug}`);
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (error) {
       if (error.message?.includes("create your client profile first")) {
@@ -227,7 +251,7 @@ function CreateWebinar() {
     return (
       <div className="webinar-wrapper">
         <div className="form-card" style={{ textAlign: "center", padding: "60px 40px" }}>
-          <h1 style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</h1>
+          <div style={{ marginBottom: "16px" }}><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6574e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
           <h2 style={{ marginBottom: "12px" }}>Webinar {isEditMode ? "Updated" : "Created"} Successfully!</h2>
           <p style={{ color: "#6b7280", marginBottom: "24px" }}>Your webinar landing page is live at:</p>
           <div style={{ background: "rgba(101,116,233,0.1)", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "12px", padding: "16px", marginBottom: "24px", wordBreak: "break-all" }}>
@@ -254,6 +278,15 @@ function CreateWebinar() {
   return (
     <div className="webinar-wrapper">
       <div className="form-card">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate("/dashboard")}
+          type="button"
+          className="cw-back-btn"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to Dashboard
+        </button>
         <h1>{isEditMode ? "Edit Your Webinar" : "Create Your Webinar"}</h1>
 
         {/* Step Indicator */}
@@ -280,7 +313,7 @@ function CreateWebinar() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} autoComplete="off">
+        <form onSubmit={(e) => e.preventDefault()} autoComplete="off" onKeyDown={(e) => { if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") e.preventDefault(); }}>
 
           {/* ===== STEP 1: BASICS ===== */}
           {currentStep === 1 && (
@@ -289,84 +322,164 @@ function CreateWebinar() {
               {availableTemplates.length > 0 && (
                 <>
                   <h2>Choose Template</h2>
+                  <p style={{ fontSize: "0.82rem", color: "#6b7280", marginBottom: "16px" }}>
+                    Select a design for your webinar landing page.
+                    <a href="/preview/classic" target="_blank" rel="noopener noreferrer" style={{ color: "#6574e9", fontWeight: "500", marginLeft: "4px" }}>Preview templates</a>
+                  </p>
                   <div style={{ display: "flex", gap: "14px", marginBottom: "28px", overflowX: "auto", paddingBottom: "8px" }}>
-                    {availableTemplates.map((t) => (
-                      <div
-                        key={t._id}
-                        onClick={() => setSelectedTemplate(t._id)}
-                        style={{
-                          minWidth: "160px", padding: "14px", borderRadius: "14px", cursor: "pointer",
-                          border: selectedTemplate === t._id ? "2px solid #6574e9" : "1px solid #e5e7eb",
-                          background: selectedTemplate === t._id ? "rgba(101,116,233,0.04)" : "#fafafa",
-                          textAlign: "center", transition: "all 0.2s ease",
-                        }}
-                      >
-                        {t.thumbnail ? (
-                          <img src={t.thumbnail} alt={t.name} style={{ width: "100%", height: "80px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }} />
-                        ) : (
-                          <div style={{ width: "100%", height: "80px", background: "#e5e7eb", borderRadius: "8px", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "0.8rem" }}>{t.name}</div>
-                        )}
-                        <div style={{ fontWeight: "600", fontSize: "0.88rem", color: "#1a1a35" }}>{t.name}</div>
-                        <div style={{ fontSize: "0.72rem", color: "#6b7280", textTransform: "uppercase", marginTop: "2px" }}>{t.minTier}</div>
-                        {selectedTemplate === t._id && <div style={{ fontSize: "0.72rem", color: "#6574e9", fontWeight: "600", marginTop: "4px" }}>Selected</div>}
-                      </div>
-                    ))}
+                    {availableTemplates.map((t) => {
+                      const isSelected = selectedTemplate === t._id;
+                      return (
+                        <div
+                          key={t._id}
+                          onClick={() => setSelectedTemplate(t._id)}
+                          style={{
+                            minWidth: "180px", maxWidth: "200px", padding: "14px", borderRadius: "14px", cursor: "pointer",
+                            border: isSelected ? "2px solid #6574e9" : "1px solid #e5e7eb",
+                            background: isSelected ? "rgba(101,116,233,0.04)" : "#fafafa",
+                            textAlign: "center", transition: "all 0.2s ease", position: "relative",
+                          }}
+                        >
+                          {t.thumbnail ? (
+                            <img src={t.thumbnail} alt={t.name} style={{ width: "100%", height: "90px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }} />
+                          ) : (
+                            <div style={{ width: "100%", height: "90px", background: t.minTier === "elite" ? "linear-gradient(135deg, #ff6b35, #f72585)" : t.minTier === "growth" ? "linear-gradient(135deg, #0f172a, #1e293b)" : "linear-gradient(135deg, #f8f9fb, #e5e7eb)", borderRadius: "8px", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: t.minTier === "basic" ? "#6b7280" : "white", fontSize: "0.78rem", fontWeight: "600" }}>{t.name}</div>
+                          )}
+                          <div style={{ fontWeight: "600", fontSize: "0.88rem", color: "#1a1a35" }}>{t.name}</div>
+                          <div style={{ fontSize: "0.68rem", color: "#9ca3af", textTransform: "uppercase", marginTop: "2px", letterSpacing: "0.04em" }}>{t.minTier} plan</div>
+                          {isSelected && (
+                            <div style={{ fontSize: "0.72rem", color: "#6574e9", fontWeight: "700", marginTop: "6px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              Selected
+                            </div>
+                          )}
+                          {t.description && (
+                            <div style={{ fontSize: "0.7rem", color: "#9ca3af", marginTop: "4px", lineHeight: "1.4" }}>{t.description.substring(0, 50)}...</div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               )}
 
+              {/* Title & Subtitle */}
               <div className="grid">
-                <input name="title" value={formData.title} placeholder="Webinar Title *" required onChange={handleChange} />
-                <input name="subtitle" value={formData.subtitle} placeholder="Subtitle / Tagline" onChange={handleChange} />
-              </div>
-
-              <input name="slug" value={formData.slug} placeholder="URL Slug (auto-generated if empty, e.g. yoga-masterclass)" onChange={handleChange} style={{ marginBottom: "16px" }} />
-
-              <textarea name="description" value={formData.description} placeholder="Full Description *" required onChange={handleChange} rows={4} />
-
-              <h2>Categories *</h2>
-              <div className="category-grid">
-                {categoriesList.map(cat => (
-                  <div key={cat} className={`category ${formData.categories.includes(cat) ? "active-cat" : ""}`} onClick={() => handleCategoryChange(cat)}>
-                    {cat}
-                  </div>
-                ))}
-              </div>
-
-              <h2>Pricing</h2>
-              <div className="toggle pricing-toggle">
-                <button type="button" className={formData.pricingType === "free" ? "active-btn" : ""} onClick={() => setFormData({ ...formData, pricingType: "free" })}>Free</button>
-                <button type="button" className={formData.pricingType === "paid" ? "active-btn" : ""} onClick={() => setFormData({ ...formData, pricingType: "paid" })}>Paid</button>
-              </div>
-
-              <div className="grid">
-                {formData.pricingType === "paid" && (
-                  <>
-                    <input name="price" value={formData.price} type="number" placeholder="Price (₹) *" required onChange={handleChange} />
-                    <input name="originalPrice" value={formData.originalPrice} type="number" placeholder="Original Price (₹) for strikethrough" onChange={handleChange} />
-                  </>
-                )}
-                <input name="webinarDateTime" value={formData.webinarDateTime} type="datetime-local" required onChange={handleChange} />
-                <input name="durationMinutes" value={formData.durationMinutes} type="number" placeholder="Duration (Minutes) *" required onChange={handleChange} />
-              </div>
-
-              <div className="grid">
-                <input name="registrationDeadline" value={formData.registrationDeadline} type="datetime-local" onChange={handleChange} placeholder="Registration Deadline" />
-                <input name="maxSeats" value={formData.maxSeats} type="number" placeholder="Max Seats" onChange={handleChange} />
-                <input name="language" value={formData.language} placeholder="Language" onChange={handleChange} />
-              </div>
-
-              <div className="grid">
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <label style={{ fontSize: "12px", color: "#6b7280" }}>Banner Image {formData.bannerImageFile ? `(${formData.bannerImageFile.name})` : ""}</label>
-                  <input type="file" accept="image/*" onChange={(e) => { if (e.target.files[0]) setFormData({ ...formData, bannerImageFile: e.target.files[0], bannerImage: "" }); }} style={{ fontSize: "13px" }} />
+                <div className="cw-field">
+                  <label className="cw-label">Webinar Title <span className="cw-req">*</span></label>
+                  <input name="title" value={formData.title} placeholder="e.g. Master AI: Build Apps with ChatGPT" required onChange={handleChange} />
                 </div>
-                <input name="meetingLink" value={formData.meetingLink} placeholder="Meeting Link (Zoom/Google Meet)" onChange={handleChange} />
+                <div className="cw-field">
+                  <label className="cw-label">Subtitle / Tagline</label>
+                  <input name="subtitle" value={formData.subtitle} placeholder="e.g. From Zero to AI Products in 90 Minutes" onChange={handleChange} />
+                </div>
               </div>
 
-              <div className="toggle">
-                <button type="button" className={formData.status === "draft" ? "active-btn" : ""} onClick={() => setFormData({ ...formData, status: "draft" })}>Draft</button>
-                <button type="button" className={formData.status === "published" ? "active-btn" : ""} onClick={() => setFormData({ ...formData, status: "published" })}>Published</button>
+              <div className="cw-field">
+                <label className="cw-label">URL Slug <span className="cw-hint">(auto-generated if empty)</span></label>
+                <input name="slug" value={formData.slug} placeholder="e.g. ai-masterclass-chatgpt" onChange={handleChange} />
+              </div>
+
+              <div className="cw-field">
+                <label className="cw-label">Description <span className="cw-req">*</span></label>
+                <textarea name="description" value={formData.description} placeholder="Tell attendees what this webinar is about, what they'll learn, and why they should join..." required onChange={handleChange} rows={4} />
+              </div>
+
+              {/* Categories */}
+              <div className="cw-field">
+                <label className="cw-label">Categories <span className="cw-req">*</span> <span className="cw-hint">(select one or more)</span></label>
+                <div className="category-grid">
+                  {categoriesList.map(cat => (
+                    <div key={cat} className={`category ${formData.categories.includes(cat) ? "active-cat" : ""}`} onClick={() => handleCategoryChange(cat)}>
+                      {cat}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pricing */}
+              <div className="cw-field">
+                <label className="cw-label">Pricing</label>
+                <div className="toggle pricing-toggle">
+                  <button type="button" className={formData.pricingType === "free" ? "active-btn" : ""} onClick={() => setFormData({ ...formData, pricingType: "free" })}>Free</button>
+                  <button type="button" className={formData.pricingType === "paid" ? "active-btn" : ""} onClick={() => setFormData({ ...formData, pricingType: "paid" })}>Paid</button>
+                </div>
+              </div>
+
+              {formData.pricingType === "paid" && (
+                <div className="grid">
+                  <div className="cw-field">
+                    <label className="cw-label">Price (₹) <span className="cw-req">*</span></label>
+                    <input name="price" value={formData.price} type="number" placeholder="e.g. 199" required onChange={handleChange} />
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Original Price (₹) <span className="cw-hint">(shows strikethrough)</span></label>
+                    <input name="originalPrice" value={formData.originalPrice} type="number" placeholder="e.g. 999" onChange={handleChange} />
+                  </div>
+                </div>
+              )}
+
+              {/* Schedule */}
+              <h2>Schedule</h2>
+              <div className="grid">
+                <div className="cw-field">
+                  <label className="cw-label">Webinar Date & Time <span className="cw-req">*</span></label>
+                  <p className="cw-desc">When will the webinar take place?</p>
+                  <input name="webinarDateTime" value={formData.webinarDateTime} type="datetime-local" required onChange={handleChange} />
+                </div>
+                <div className="cw-field">
+                  <label className="cw-label">Duration (Minutes) <span className="cw-req">*</span></label>
+                  <p className="cw-desc">How long will the session last?</p>
+                  <input name="durationMinutes" value={formData.durationMinutes} type="number" placeholder="e.g. 90" required onChange={handleChange} />
+                </div>
+              </div>
+
+              <div className="grid">
+                <div className="cw-field">
+                  <label className="cw-label">Registration Deadline <span className="cw-hint">(optional)</span></label>
+                  <p className="cw-desc">Last date users can register. Leave empty to allow registration until the webinar starts.</p>
+                  <input name="registrationDeadline" value={formData.registrationDeadline} type="datetime-local" onChange={handleChange} />
+                </div>
+                <div className="cw-field">
+                  <label className="cw-label">Max Seats <span className="cw-hint">(optional)</span></label>
+                  <p className="cw-desc">Leave empty for unlimited seats.</p>
+                  <input name="maxSeats" value={formData.maxSeats} type="number" placeholder="e.g. 500" onChange={handleChange} />
+                </div>
+              </div>
+
+              {/* Additional */}
+              <h2>Additional Details</h2>
+              <div className="grid">
+                <div className="cw-field">
+                  <label className="cw-label">Language</label>
+                  <input name="language" value={formData.language} placeholder="e.g. English" onChange={handleChange} />
+                </div>
+                <div className="cw-field">
+                  <label className="cw-label">Meeting Link <span className="cw-hint">(Zoom / Google Meet)</span></label>
+                  <input name="meetingLink" value={formData.meetingLink} placeholder="https://meet.google.com/..." onChange={handleChange} />
+                </div>
+              </div>
+
+              <div className="grid">
+                <div className="cw-field">
+                  <label className="cw-label">Banner Image</label>
+                  <p className="cw-desc">Upload a cover image for your webinar page. {formData.bannerImage && formData.bannerImage.startsWith("data:") ? "Image uploaded" : ""}</p>
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setFormData(prev => ({ ...prev, bannerImage: reader.result, bannerImageFile: null }));
+                      reader.readAsDataURL(file);
+                    }
+                  }} />
+                </div>
+                <div className="cw-field">
+                  <label className="cw-label">Status</label>
+                  <div className="toggle">
+                    <button type="button" className={formData.status === "draft" ? "active-btn" : ""} onClick={() => setFormData({ ...formData, status: "draft" })}>Draft</button>
+                    <button type="button" className={formData.status === "published" ? "active-btn" : ""} onClick={() => setFormData({ ...formData, status: "published" })}>Published</button>
+                  </div>
+                </div>
               </div>
             </>
           )}
@@ -375,20 +488,40 @@ function CreateWebinar() {
           {currentStep === 2 && (
             <>
               <h2>Speaker / Host Details</h2>
+              <p className="cw-section-desc">Add details about the person hosting the webinar. This info appears on the public landing page.</p>
               <div className="grid">
-                <input name="speakerName" value={formData.speakerName} placeholder="Speaker Full Name" onChange={handleChange} />
-                <input name="speakerImage" value={formData.speakerImage} placeholder="Speaker Image URL" onChange={handleChange} />
+                <div className="cw-field">
+                  <label className="cw-label">Speaker Name</label>
+                  <input name="speakerName" value={formData.speakerName} placeholder="e.g. Arjun Verma" onChange={handleChange} />
+                </div>
+                <div className="cw-field">
+                  <label className="cw-label">Speaker Image</label>
+                  <p className="cw-desc">Upload an image or paste a direct image URL. {formData.speakerImage && formData.speakerImage.startsWith("data:") ? "Image uploaded" : ""}</p>
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setFormData(prev => ({ ...prev, speakerImage: reader.result }));
+                      reader.readAsDataURL(file);
+                    }
+                  }} />
+                  <input name="speakerImage" value={formData.speakerImage && !formData.speakerImage.startsWith("data:") ? formData.speakerImage : ""} placeholder="Or paste URL: https://example.com/photo.jpg" onChange={handleChange} style={{ marginTop: "8px" }} />
+                </div>
               </div>
 
-              <textarea name="speakerBio" value={formData.speakerBio} placeholder="Speaker Bio / Credentials (e.g. 10+ years in Digital Marketing, TEDx Speaker...)" onChange={handleChange} rows={3} />
+              <div className="cw-field">
+                <label className="cw-label">Speaker Bio</label>
+                <textarea name="speakerBio" value={formData.speakerBio} placeholder="e.g. Senior AI Engineer with 8+ years experience. TEDx Speaker. Built products used by 2M+ users." onChange={handleChange} rows={3} />
+              </div>
 
               <h2>Social Links</h2>
+              <p className="cw-section-desc">Add speaker's social media profiles. These will appear as clickable links on the webinar page.</p>
               <div className="grid">
-                <input placeholder="Instagram URL" value={formData.speakerSocials.instagram} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, instagram: e.target.value } })} />
-                <input placeholder="YouTube URL" value={formData.speakerSocials.youtube} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, youtube: e.target.value } })} />
-                <input placeholder="LinkedIn URL" value={formData.speakerSocials.linkedin} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, linkedin: e.target.value } })} />
-                <input placeholder="Twitter / X URL" value={formData.speakerSocials.twitter} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, twitter: e.target.value } })} />
-                <input placeholder="Personal Website" value={formData.speakerSocials.website} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, website: e.target.value } })} />
+                <div className="cw-field"><label className="cw-label">Instagram</label><input placeholder="https://instagram.com/..." value={formData.speakerSocials.instagram} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, instagram: e.target.value } })} /></div>
+                <div className="cw-field"><label className="cw-label">YouTube</label><input placeholder="https://youtube.com/..." value={formData.speakerSocials.youtube} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, youtube: e.target.value } })} /></div>
+                <div className="cw-field"><label className="cw-label">LinkedIn</label><input placeholder="https://linkedin.com/in/..." value={formData.speakerSocials.linkedin} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, linkedin: e.target.value } })} /></div>
+                <div className="cw-field"><label className="cw-label">Twitter / X</label><input placeholder="https://twitter.com/..." value={formData.speakerSocials.twitter} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, twitter: e.target.value } })} /></div>
+                <div className="cw-field"><label className="cw-label">Website</label><input placeholder="https://yoursite.com" value={formData.speakerSocials.website} onChange={(e) => setFormData({ ...formData, speakerSocials: { ...formData.speakerSocials, website: e.target.value } })} /></div>
               </div>
             </>
           )}
@@ -486,9 +619,9 @@ function CreateWebinar() {
                   Next Step
                 </button>
               ) : (
-                <button type="submit"
+                <button type="button" onClick={handleSubmit}
                   style={{ padding: "14px 32px", background: "linear-gradient(135deg, #6574e9, #4f5cd4)", border: "none", borderRadius: "10px", color: "white", cursor: "pointer", fontWeight: "700", fontSize: "16px" }}>
-                  {isEditMode ? "Update Webinar" : "Create Webinar"} 🚀
+                  {isEditMode ? "Update Webinar" : "Create Webinar"}
                 </button>
               )}
             </div>

@@ -108,11 +108,11 @@ const LandingPage = () => {
           {["Home", "About", "How It Works", "Features", "Pricing"].map((item) => (
             <li key={item}><a href={`#${item.toLowerCase().replace(/ /g, "")}`} onClick={() => setMobileMenu(false)}>{item}</a></li>
           ))}
-          <li className="mob-cta"><button className="btn-primary3" onClick={() => { setMobileMenu(false); navigate("/signup"); }}>Get Started &rarr;</button></li>
+          <li className="mob-cta"><button className="btn-primary3" onClick={() => { setMobileMenu(false); navigate("/signin"); }}>Get Started &rarr;</button></li>
         </ul>
         <div className="nav-right3">
-          <button className="btn-ghost3" onClick={() => navigate("/signup")}>Log in</button>
-          <button className="btn-primary3 desk-only" onClick={() => navigate("/signup")}>Try for free</button>
+          <button className="btn-ghost3" onClick={() => navigate("/signin")}>Log in</button>
+          <button className="btn-primary3 desk-only" onClick={() => navigate("/signin")}>Try for free</button>
           <button className="hamburger3" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Menu">
             <span className={`hl ${mobileMenu ? "x" : ""}`} /><span className={`hl ${mobileMenu ? "x" : ""}`} /><span className={`hl ${mobileMenu ? "x" : ""}`} />
           </button>
@@ -139,7 +139,7 @@ const LandingPage = () => {
               Create stunning webinars, set flexible pricing, and grow your audience with real-time analytics — all from one premium platform.
             </p>
             <div className="hero-ctas">
-              <button className="btn-primary3 btn-lg" onClick={() => navigate("/signup")}>Start Free Trial &rarr;</button>
+              <button className="btn-primary3 btn-lg" onClick={() => navigate("/signin")}>Start Free Trial &rarr;</button>
               <button className="btn-outline3 btn-lg" onClick={() => document.getElementById("howitworks")?.scrollIntoView({ behavior: "smooth" })}>See How It Works</button>
             </div>
             <div className="hero-proof">
@@ -212,9 +212,9 @@ const LandingPage = () => {
 
         <div className="about-grid3">
           {[
-            { icon: "💸", problem: "Monetization Is Complicated", solution: "Flexible pricing — subscriptions, one-time, tiers. Zero hidden fees." },
-            { icon: "🔒", problem: "Content Gets Pirated", solution: "OTP-based authentication ensures only verified users access your content." },
-            { icon: "😩", problem: "Poor User Experience", solution: "Modern, conversion-optimized UI that makes your brand look premium." },
+            { icon: "01", problem: "Monetization Is Complicated", solution: "Flexible pricing — subscriptions, one-time, tiers. Zero hidden fees." },
+            { icon: "02", problem: "Content Gets Pirated", solution: "OTP-based authentication ensures only verified users access your content." },
+            { icon: "03", problem: "Poor User Experience", solution: "Modern, conversion-optimized UI that makes your brand look premium." },
           ].map((r, i) => (
             <div className="about-row" key={i}>
               <div className="about-icon">{r.icon}</div>
@@ -266,12 +266,12 @@ const LandingPage = () => {
 
         <div className="feat-grid3">
           {[
-            { emoji: "🎯", title: "Smart Targeting", desc: "AI-driven audience targeting connects your webinar with the right learners at the right time.", big: true },
-            { emoji: "📊", title: "Real-Time Analytics", desc: "Monitor revenue, conversions, and engagement as they happen." },
-            { emoji: "🔐", title: "Secure Access", desc: "OTP-verified enrollment keeps your premium content protected." },
-            { emoji: "💰", title: "Flexible Pricing", desc: "Subscriptions, bundles, one-time — set any pricing model you want.", big: true },
-            { emoji: "🤝", title: "Affiliate System", desc: "Let others promote your webinars and boost your reach." },
-            { emoji: "✨", title: "Stunning Pages", desc: "Auto-generated, conversion-optimized landing pages for every webinar." },
+            { emoji: "01", title: "Smart Targeting", desc: "AI-driven audience targeting connects your webinar with the right learners at the right time.", big: true },
+            { emoji: "02", title: "Real-Time Analytics", desc: "Monitor revenue, conversions, and engagement as they happen." },
+            { emoji: "03", title: "Secure Access", desc: "OTP-verified enrollment keeps your premium content protected." },
+            { emoji: "04", title: "Flexible Pricing", desc: "Subscriptions, bundles, one-time — set any pricing model you want.", big: true },
+            { emoji: "05", title: "Affiliate System", desc: "Let others promote your webinars and boost your reach." },
+            { emoji: "06", title: "Stunning Pages", desc: "Auto-generated, conversion-optimized landing pages for every webinar." },
           ].map((f, i) => (
             <div className={`feature-card ${f.big ? "feat-wide" : ""}`} key={i}>
               <div className="feat-emoji">{f.emoji}</div>
@@ -395,8 +395,8 @@ const LandingPage = () => {
           <h2>Ready to turn your knowledge into revenue?</h2>
           <p>Join 10,000+ creators who trust Enrollify to grow their business.</p>
           <div className="cta-btns3">
-            <button className="btn-primary3 btn-lg" onClick={() => navigate("/signup")}>Start Free Trial &rarr;</button>
-            <button className="btn-outline3 btn-lg" onClick={() => navigate("/signup")}>Book a Demo</button>
+            <button className="btn-primary3 btn-lg" onClick={() => navigate("/signin")}>Start Free Trial &rarr;</button>
+            <button className="btn-outline3 btn-lg" onClick={() => navigate("/signin")}>Book a Demo</button>
           </div>
         </div>
       </section>

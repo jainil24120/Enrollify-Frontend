@@ -1,0 +1,451 @@
+/* ===== WhatsApp Panel ===== */
+.wa-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.wa-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.wa-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a35;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wa-icon {
+  font-size: 20px;
+}
+
+.wa-section-desc {
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+/* ===== Status Card ===== */
+.wa-status-card {
+  background: #f8f9fb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.wa-status-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.wa-status-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wa-status-dot.connected {
+  background: #25D366;
+  box-shadow: 0 0 8px rgba(37, 211, 102, 0.4);
+}
+
+.wa-status-dot.qr_pending {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  animation: pulse 1.5s infinite;
+}
+
+.wa-status-dot.disconnected {
+  background: #9ca3af;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.wa-status-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wa-status-label {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1a1a35;
+}
+
+.wa-phone {
+  font-size: 13px;
+  color: #25D366;
+  font-weight: 500;
+}
+
+.wa-status-actions {
+  margin-left: auto;
+}
+
+/* ===== Buttons ===== */
+.wa-btn {
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wa-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wa-btn-connect {
+  background: #25D366;
+  color: #fff;
+}
+
+.wa-btn-connect:hover:not(:disabled) {
+  background: #1da851;
+}
+
+.wa-btn-disconnect {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.wa-btn-disconnect:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.wa-btn-send {
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: #fff;
+  padding: 12px 28px;
+  font-size: 15px;
+}
+
+.wa-btn-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.wa-btn-schedule {
+  background: linear-gradient(135deg, #6574e9, #4f5cd4);
+  color: #fff;
+  padding: 12px 28px;
+  font-size: 15px;
+}
+
+.wa-btn-schedule:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(101, 116, 233, 0.3);
+}
+
+/* ===== QR Code ===== */
+.wa-qr-container {
+  text-align: center;
+  margin-top: 20px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.wa-qr-instruction {
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.wa-qr-wrapper {
+  display: inline-block;
+  padding: 12px;
+  background: #fff;
+  border-radius: 16px;
+  border: 3px solid #25D366;
+}
+
+.wa-qr-image {
+  width: 256px;
+  height: 256px;
+  border-radius: 8px;
+}
+
+.wa-qr-note {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 12px;
+}
+
+/* ===== Form Groups ===== */
+.wa-form-group {
+  margin-bottom: 16px;
+}
+
+.wa-form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.wa-form-group select,
+.wa-form-group input,
+.wa-form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1a1a35;
+  background: #f8f9fb;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.wa-form-group select:focus,
+.wa-form-group input:focus,
+.wa-form-group textarea:focus {
+  outline: none;
+  border-color: #25D366;
+}
+
+.wa-form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ===== Variable Buttons ===== */
+.wa-variable-btns {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.wa-variable-btns button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6574e9;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: monospace;
+}
+
+.wa-variable-btns button:hover {
+  background: rgba(101, 116, 233, 0.08);
+  border-color: #6574e9;
+}
+
+/* ===== Preset Buttons ===== */
+.wa-preset-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wa-preset-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f8f9fb;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wa-preset-btn.active {
+  background: rgba(101, 116, 233, 0.12);
+  border-color: #6574e9;
+  color: #6574e9;
+}
+
+.wa-preset-btn:hover {
+  border-color: #6574e9;
+}
+
+/* ===== Results ===== */
+.wa-result {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.wa-result-success {
+  background: rgba(37, 211, 102, 0.1);
+  border: 1px solid rgba(37, 211, 102, 0.3);
+  color: #128C7E;
+}
+
+.wa-result-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.wa-error {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 13px;
+}
+
+/* ===== History Table ===== */
+.wa-history-table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.wa-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.wa-history-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: #f8f9fb;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.wa-history-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+}
+
+.wa-msg-preview {
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-type-badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.wa-type-broadcast {
+  background: rgba(37, 211, 102, 0.1);
+  color: #128C7E;
+}
+
+.wa-type-scheduled_custom {
+  background: rgba(101, 116, 233, 0.1);
+  color: #6574e9;
+}
+
+.wa-status-badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.wa-status-sent {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25D366;
+}
+
+.wa-status-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.wa-status-partial {
+  background: rgba(101, 116, 233, 0.1);
+  color: #6574e9;
+}
+
+/* ===== Hint Section ===== */
+.wa-hint-card {
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border: 1px solid rgba(37, 211, 102, 0.2);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.wa-hint-card h3 {
+  font-size: 16px;
+  color: #1a1a35;
+  margin-bottom: 14px;
+}
+
+.wa-hint-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wa-hint-card li {
+  font-size: 14px;
+  color: #374151;
+  padding-left: 20px;
+  position: relative;
+}
+
+.wa-hint-card li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #25D366;
+  font-weight: 700;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .wa-status-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .wa-status-actions {
+    margin-left: 0;
+    margin-top: 12px;
+  }
+  .wa-qr-image {
+    width: 200px;
+    height: 200px;
+  }
+  .wa-preset-btns {
+    flex-direction: column;
+  }
+}
