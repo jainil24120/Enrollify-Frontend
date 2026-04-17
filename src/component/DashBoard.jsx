@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import "./DashBoard.css";
-import { Search, Filter, MessageCircle, X, Download, Plus, LayoutGrid, List, Link, Edit2, BarChart2, Copy, MoreVertical, Wallet, Landmark, ArrowUpRight, DownloadCloud, CreditCard, Settings, Link2, ShieldCheck, RefreshCw, Mail, MessageSquare, Activity, CheckCircle2, User, Globe, Palette, Bell, Lock, Trash2, FileText, RotateCcw, AlertCircle } from "lucide-react";
+import { Search, Filter, MessageCircle, X, Download, Plus, LayoutGrid, List, Link, Edit2, BarChart2, Copy, MoreVertical, Wallet, Landmark, ArrowUpRight, DownloadCloud, CreditCard, Settings, Link2, ShieldCheck, RefreshCw, Mail, MessageSquare, Activity, CheckCircle2, User, Globe, Palette, Bell, Lock, Trash2, FileText, RotateCcw, AlertCircle, LifeBuoy } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI, getClientAudienceAPI, getClientSubscriptionAPI, getClientProfileAPI, updateClientProfileAPI } from "../api/clientApi";
@@ -10,6 +10,7 @@ import { API_BASE } from "../api/config.js";
 import logoImg from "../assets/Logo.jpeg";
 import TemplateGallery from "./TemplateGallery";
 import WhatsAppPanel from "./WhatsAppPanel";
+import SupportPage from "./SupportPage";
 
 
 const generateZeroTrend = (days = 30) => {
@@ -88,6 +89,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedPlan, onLogout }) => {
         { name: "WhatsApp", icon: <MessageSquare size={18} /> },
         { name: "Revenue", icon: <ArrowUpRight size={18} /> },
         { name: "Billing", icon: <CreditCard size={18} /> },
+        { name: "Support", icon: <LifeBuoy size={18} /> },
         { name: "Settings", icon: <Settings size={18} /> }
     ];
 
@@ -138,6 +140,7 @@ const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
                 {activeTab === "Templates" && "Template Gallery"}
                 {activeTab === "Revenue" && "Revenue & Payouts"}
                 {activeTab === "Billing" && "Billing / Plan"}
+                {activeTab === "Support" && "Help & Support"}
                 {activeTab === "Settings" && "Settings"}
             </h1>
             <div className="profile" onClick={onProfileClick}>
@@ -1823,6 +1826,11 @@ const DashBoard = () => {
                             backendPlans={backendPlans}
                             dashboardStats={dashboardStats}
                         />
+                    </ErrorBoundary>
+                )}
+                {activeTab === "Support" && (
+                    <ErrorBoundary>
+                        <SupportPage isAdmin={false} />
                     </ErrorBoundary>
                 )}
                 {activeTab === "Settings" && (

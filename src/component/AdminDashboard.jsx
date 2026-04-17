@@ -15,6 +15,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import AdminTemplateManager from "./AdminTemplateManager";
 import WhatsAppPanel from "./WhatsAppPanel";
+import SupportPage from "./SupportPage";
 import logoImg from "../assets/Logo.jpeg";
 import { AVAILABLE_TEMPLATES } from "./templates/templateRegistry";
 import { fetchAllTemplates } from "../api/templateApi";
@@ -2015,6 +2016,10 @@ const AdminDashboard = () => {
         return <WhatsAppPanel isAdmin={true} />;
       }
 
+      case "support": {
+        return <SupportPage isAdmin={true} />;
+      }
+
       case "settings": {
         return (
           <div className="settings-page">
@@ -2269,6 +2274,9 @@ const AdminDashboard = () => {
           <li className={activeTab === "whatsapp" ? "active" : ""} onClick={() => setActiveTab("whatsapp")}>
             <Smartphone size={20} /> WhatsApp
           </li>
+          <li className={activeTab === "support" ? "active" : ""} onClick={() => setActiveTab("support")}>
+            <Shield size={20} /> Support
+          </li>
           <li className={activeTab === "settings" ? "active" : ""} onClick={() => setActiveTab("settings")}>
             <Settings size={20} /> Settings
           </li>
@@ -2301,6 +2309,7 @@ const AdminDashboard = () => {
             {activeTab === "subscriptions" && "Subscriptions"}
             {activeTab === "templates" && "Templates"}
             {activeTab === "whatsapp" && "WhatsApp Management"}
+            {activeTab === "support" && "Support Tickets"}
             {activeTab === "settings" && "Admin Settings"}
           </h1>
           <div className="profile">

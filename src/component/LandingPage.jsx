@@ -33,70 +33,122 @@ const FloatingBlob = () => {
   );
 };
 
+/* ===== Inline icons ===== */
+const Icon = ({ name }) => {
+  const common = { width: 24, height: 24, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
+  switch (name) {
+    case "wallet":
+      return <svg {...common}><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>;
+    case "shield":
+      return <svg {...common}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>;
+    case "sparkle":
+      return <svg {...common}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>;
+    case "target":
+      return <svg {...common}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>;
+    case "chart":
+      return <svg {...common}><path d="M3 3v18h18"/><path d="m7 15 4-4 4 4 5-6"/></svg>;
+    case "lock":
+      return <svg {...common}><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>;
+    case "tag":
+      return <svg {...common}><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="8" cy="8" r="1.5"/></svg>;
+    case "users":
+      return <svg {...common}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    case "layout":
+      return <svg {...common}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>;
+    case "play":
+      return <svg {...common} fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>;
+    default:
+      return null;
+  }
+};
+
+/* ===== Honest testimonial initials ===== */
+const initialsFor = (name) => name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+const bgFor = (seed) => {
+  const palette = ["#6574e9", "#7c8ff0", "#4ade80", "#f59e0b", "#ec4899", "#14b8a6"];
+  return palette[seed % palette.length];
+};
+
 const LandingPage = () => {
   const navigate = useNavigate();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
+  const rootRef = useRef(null);
 
   /* Nav scroll tracking */
   useEffect(() => {
-    const sections = document.querySelectorAll("section");
-    const navLinks = document.querySelectorAll(".nav-links a");
+    const sections = document.querySelectorAll("section[id]");
+    const navLinks = document.querySelectorAll(".nav-links3 a");
     const handleScroll = () => {
       let current = "";
-      sections.forEach((s) => { if (window.scrollY >= s.offsetTop - 120) current = s.getAttribute("id"); });
-      navLinks.forEach((l) => { l.classList.remove("active"); if (l.getAttribute("href") === `#${current}`) l.classList.add("active"); });
+      sections.forEach((s) => {
+        if (window.scrollY >= s.offsetTop - 120) current = s.getAttribute("id");
+      });
+      navLinks.forEach((l) => {
+        l.classList.remove("active");
+        if (l.getAttribute("href") === `#${current}`) l.classList.add("active");
+      });
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  /* GSAP animations */
+  /* GSAP animations — scoped to rootRef, proper cleanup */
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const ctx = gsap.context(() => {
-        // Hero
-        gsap.fromTo(".hero-title", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power4.out" });
-        gsap.fromTo(".hero-sub", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.25, ease: "power3.out" });
-        gsap.fromTo(".hero-ctas", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, delay: 0.45, ease: "power3.out" });
-        gsap.fromTo(".hero-visual", { scale: 0.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 1.2, delay: 0.2, ease: "elastic.out(1,0.6)" });
+    const ctx = gsap.context(() => {
+      gsap.fromTo(".hero-title", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power4.out" });
+      gsap.fromTo(".hero-sub", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.2, ease: "power3.out" });
+      gsap.fromTo(".hero-ctas", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, delay: 0.4, ease: "power3.out" });
+      gsap.fromTo(".hero-visual", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, delay: 0.3, ease: "power3.out" });
 
-        // Decorative shapes
-        gsap.utils.toArray(".deco-shape").forEach((shape) => {
-          gsap.to(shape, {
-            y: -30, rotation: "+=15",
-            scrollTrigger: { trigger: shape, start: "top bottom", end: "bottom top", scrub: 1.5 },
-          });
+      gsap.utils.toArray(".deco-shape").forEach((shape) => {
+        gsap.to(shape, {
+          y: -30,
+          rotation: "+=10",
+          scrollTrigger: { trigger: shape, start: "top bottom", end: "bottom top", scrub: 1.5 },
         });
-
-        // Scroll reveals
-        const reveal = (sel, stag = 0.1) => {
-          gsap.utils.toArray(sel).forEach((el, i) => {
-            gsap.fromTo(el, { y: 40, opacity: 0 }, {
-              y: 0, opacity: 1, duration: 0.65, delay: i * stag, ease: "power3.out",
-              scrollTrigger: { trigger: el, start: "top 93%", toggleActions: "play none none none" },
-            });
-          });
-        };
-
-        reveal(".sec-head");
-        reveal(".brand-logo", 0.06);
-        reveal(".about-row", 0.12);
-        reveal(".wf-step", 0.1);
-        reveal(".feature-card", 0.07);
-        reveal(".stat-item", 0.08);
-        reveal(".testimonial-card", 0.1);
-        reveal(".faq-item", 0.06);
-        reveal(".pricing-card", 0.1);
       });
-      ctxRef.current = ctx;
-    }, 150);
-    const ctxRef = { current: null };
-    return () => { clearTimeout(timer); if (ctxRef.current) ctxRef.current.revert(); };
+
+      const reveal = (sel, stag = 0.08) => {
+        gsap.utils.toArray(sel).forEach((el, i) => {
+          gsap.fromTo(
+            el,
+            { y: 40, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.65,
+              delay: i * stag,
+              ease: "power3.out",
+              scrollTrigger: { trigger: el, start: "top 93%", toggleActions: "play none none none" },
+            }
+          );
+        });
+      };
+
+      reveal(".sec-head");
+      reveal(".stack-chip", 0.05);
+      reveal(".about-row", 0.1);
+      reveal(".wf-step", 0.1);
+      reveal(".feature-card", 0.07);
+      reveal(".stat-item", 0.08);
+      reveal(".testimonial-card", 0.1);
+      reveal(".faq-item", 0.05);
+      reveal(".pricing-card", 0.1);
+    }, rootRef);
+
+    return () => ctx.revert();
   }, []);
 
+  const testimonials = [
+    { name: "Billie Alice", role: "Course Creator", quote: "Enrollify changed how I monetize. Setup is fast and the analytics are sharp." },
+    { name: "Ananya Mehta", role: "Tech Educator", quote: "The dashboard is powerful and easy to use. My students love the clean enrollment flow." },
+    { name: "Vikram Patel", role: "Business Coach", quote: "I've tried a few platforms — Enrollify is the one I'm sticking with. Secure and beautiful." },
+    { name: "Priya Sharma", role: "Fitness Instructor", quote: "Setting up my first paid webinar took 10 minutes. The Razorpay integration is seamless." },
+  ];
+
   return (
-    <div className="landing-v3">
+    <div className="landing-v3" ref={rootRef}>
 
       {/* ===== NAVBAR ===== */}
       <nav className="nav3">
@@ -106,56 +158,61 @@ const LandingPage = () => {
         </div>
         <ul className={`nav-links3 ${mobileMenu ? "open" : ""}`}>
           {["Home", "About", "How It Works", "Features", "Pricing"].map((item) => (
-            <li key={item}><a href={`#${item.toLowerCase().replace(/ /g, "")}`} onClick={() => setMobileMenu(false)}>{item}</a></li>
+            <li key={item}>
+              <a href={`#${item.toLowerCase().replace(/ /g, "")}`} onClick={() => setMobileMenu(false)}>{item}</a>
+            </li>
           ))}
-          <li className="mob-cta"><button className="btn-primary3" onClick={() => { setMobileMenu(false); navigate("/signin"); }}>Get Started &rarr;</button></li>
+          <li className="mob-cta">
+            <button className="btn-primary3" onClick={() => { setMobileMenu(false); navigate("/signin"); }}>
+              Get Started &rarr;
+            </button>
+          </li>
         </ul>
         <div className="nav-right3">
           <button className="btn-ghost3" onClick={() => navigate("/signin")}>Log in</button>
           <button className="btn-primary3 desk-only" onClick={() => navigate("/signin")}>Try for free</button>
           <button className="hamburger3" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Menu">
-            <span className={`hl ${mobileMenu ? "x" : ""}`} /><span className={`hl ${mobileMenu ? "x" : ""}`} /><span className={`hl ${mobileMenu ? "x" : ""}`} />
+            <span className={`hl ${mobileMenu ? "x" : ""}`} />
+            <span className={`hl ${mobileMenu ? "x" : ""}`} />
+            <span className={`hl ${mobileMenu ? "x" : ""}`} />
           </button>
         </div>
       </nav>
 
       {/* ===== HERO ===== */}
       <section className="hero3" id="home">
-        {/* Decorative shapes */}
         <div className="deco-shape ds-1"></div>
         <div className="deco-shape ds-2"></div>
-        <div className="deco-shape ds-3"></div>
 
         <div className="hero-inner3">
           <div className="hero-text3">
             <div className="hero-chip">
               <span className="chip-dot"></span>
-              Platform for 10,000+ creators
+              Built for independent creators & educators
             </div>
             <h1 className="hero-title">
               Turn your expertise<br />into a <span className="gradient-text">revenue engine</span>
             </h1>
             <p className="hero-sub">
-              Create stunning webinars, set flexible pricing, and grow your audience with real-time analytics — all from one premium platform.
+              Create paid webinars, collect payments, and manage enrollments from a single dashboard.
+              Razorpay and Stripe built in. No code, no hassle.
             </p>
             <div className="hero-ctas">
               <button className="btn-primary3 btn-lg" onClick={() => navigate("/signin")}>Start Free Trial &rarr;</button>
-              <button className="btn-outline3 btn-lg" onClick={() => document.getElementById("howitworks")?.scrollIntoView({ behavior: "smooth" })}>See How It Works</button>
+              <button className="btn-outline3 btn-lg" onClick={() => document.getElementById("howitworks")?.scrollIntoView({ behavior: "smooth" })}>
+                <Icon name="play" /> See How It Works
+              </button>
             </div>
             <div className="hero-proof">
-              <div className="avatar-stack">
-                {[11, 14, 18, 22, 26].map((n) => (
-                  <img key={n} src={`https://i.pravatar.cc/80?img=${n}`} alt="" />
-                ))}
-              </div>
-              <div>
-                <strong>4.9/5</strong> from 2,400+ creators
+              <div className="proof-bullets">
+                <span><Icon name="shield" /> OTP-verified access</span>
+                <span><Icon name="wallet" /> Razorpay & Stripe</span>
+                <span><Icon name="chart" /> Real-time analytics</span>
               </div>
             </div>
           </div>
 
           <div className="hero-visual">
-            {/* 3D blob + floating UI cards */}
             <div className="blob-wrap">
               <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
                 <ambientLight intensity={0.5} />
@@ -166,40 +223,32 @@ const LandingPage = () => {
             </div>
 
             <div className="hero-mockup">
-              <video
-                className="hero-video"
-                src={demoVideo}
-                autoPlay
-                loop
-                muted
-                playsInline
-              />
+              <div className="mockup-bar">
+                <span></span><span></span><span></span>
+                <div className="mockup-url">enrollify.app/dashboard</div>
+              </div>
+              <video className="hero-video" src={demoVideo} autoPlay loop muted playsInline />
             </div>
 
             <div className="float-card3 fc3-1">
-              <div className="fc3-dot fc3-green"></div>
-              <span>+127% Revenue</span>
+              <div className="fc3-icon"><Icon name="chart" /></div>
+              <div>
+                <strong>Live revenue</strong>
+                <span>Tracked per webinar</span>
+              </div>
             </div>
             <div className="float-card3 fc3-2">
-              <div className="fc3-dot fc3-blue"></div>
-              <span>1,240 Enrollments</span>
+              <div className="fc3-icon"><Icon name="users" /></div>
+              <div>
+                <strong>Enrollments</strong>
+                <span>Verified via OTP</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== BRAND LOGOS ===== */}
-      <section className="brands3">
-        <p className="brands-label">Trusted by creators from</p>
-        <div className="brands-row">
-          {["Google", "Microsoft", "Meta", "Amazon", "Flipkart", "Razorpay"].map((brand) => (
-            <div className="brand-logo" key={brand}>
-              {/* PROMPT: "Logo of {brand} in grayscale, minimal, on transparent background" */}
-              <span>{brand}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* tech stack section removed */}
 
       {/* ===== ABOUT ===== */}
       <section className="about3" id="about">
@@ -212,12 +261,12 @@ const LandingPage = () => {
 
         <div className="about-grid3">
           {[
-            { icon: "01", problem: "Monetization Is Complicated", solution: "Flexible pricing — subscriptions, one-time, tiers. Zero hidden fees." },
-            { icon: "02", problem: "Content Gets Pirated", solution: "OTP-based authentication ensures only verified users access your content." },
-            { icon: "03", problem: "Poor User Experience", solution: "Modern, conversion-optimized UI that makes your brand look premium." },
+            { icon: "tag", problem: "Monetization Is Complicated", solution: "Flexible pricing — subscriptions, one-time, tiers. Zero hidden fees." },
+            { icon: "lock", problem: "Content Gets Pirated", solution: "OTP-based authentication ensures only verified users access your content." },
+            { icon: "sparkle", problem: "Poor User Experience", solution: "Modern, conversion-optimized UI that makes your brand look premium." },
           ].map((r, i) => (
             <div className="about-row" key={i}>
-              <div className="about-icon">{r.icon}</div>
+              <div className="about-icon"><Icon name={r.icon} /></div>
               <div className="about-body">
                 <h3>{r.problem}</h3>
                 <p>{r.solution}</p>
@@ -255,7 +304,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== FEATURES ===== */}
+      {/* ===== FEATURES (bento) ===== */}
       <section className="features3" id="features">
         <div className="deco-shape ds-6"></div>
         <div className="sec-head">
@@ -266,15 +315,15 @@ const LandingPage = () => {
 
         <div className="feat-grid3">
           {[
-            { emoji: "01", title: "Smart Targeting", desc: "AI-driven audience targeting connects your webinar with the right learners at the right time.", big: true },
-            { emoji: "02", title: "Real-Time Analytics", desc: "Monitor revenue, conversions, and engagement as they happen." },
-            { emoji: "03", title: "Secure Access", desc: "OTP-verified enrollment keeps your premium content protected." },
-            { emoji: "04", title: "Flexible Pricing", desc: "Subscriptions, bundles, one-time — set any pricing model you want.", big: true },
-            { emoji: "05", title: "Affiliate System", desc: "Let others promote your webinars and boost your reach." },
-            { emoji: "06", title: "Stunning Pages", desc: "Auto-generated, conversion-optimized landing pages for every webinar." },
+            { icon: "target", title: "Smart Targeting", desc: "AI-driven audience targeting connects your webinar with the right learners at the right time.", big: true },
+            { icon: "chart", title: "Real-Time Analytics", desc: "Monitor revenue, conversions, and engagement as they happen." },
+            { icon: "shield", title: "Secure Access", desc: "OTP-verified enrollment keeps your premium content protected." },
+            { icon: "tag", title: "Flexible Pricing", desc: "Subscriptions, bundles, one-time — set any pricing model you want.", big: true },
+            { icon: "users", title: "Affiliate System", desc: "Let others promote your webinars and boost your reach." },
+            { icon: "layout", title: "Stunning Pages", desc: "Auto-generated, conversion-optimized landing pages for every webinar." },
           ].map((f, i) => (
             <div className={`feature-card ${f.big ? "feat-wide" : ""}`} key={i}>
-              <div className="feat-emoji">{f.emoji}</div>
+              <div className="feat-icon"><Icon name={f.icon} /></div>
               <h3>{f.title}</h3>
               <p>{f.desc}</p>
             </div>
@@ -282,15 +331,15 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== BIG STATS ===== */}
+      {/* ===== VALUE STRIP (replaces fake stats) ===== */}
       <section className="stats3">
         <div className="deco-shape ds-7"></div>
         <div className="stats-inner">
           {[
-            { val: "10,000+", label: "Active Creators" },
-            { val: "50,000+", label: "Webinars Hosted" },
-            { val: "₹2.5 Cr+", label: "Creator Earnings" },
-            { val: "98%", label: "Satisfaction Rate" },
+            { val: "2 min", label: "Time to launch your first webinar" },
+            { val: "0%", label: "Hidden fees or lock-in" },
+            { val: "2–3 day", label: "Payouts to your bank" },
+            { val: "24/7", label: "Creator support" },
           ].map((s, i) => (
             <div className="stat-item" key={i}>
               <strong>{s.val}</strong>
@@ -304,23 +353,21 @@ const LandingPage = () => {
       <section className="test3">
         <div className="sec-head">
           <span className="sec-chip">Testimonials</span>
-          <h2>Loved by <span className="gradient-text">Top Creators</span></h2>
-          <p>See what real creators are saying</p>
+          <h2>Loved by <span className="gradient-text">Early Creators</span></h2>
+          <p>Direct feedback from our first wave of users</p>
         </div>
 
         <div className="test-grid3">
-          {[
-            { img: "https://i.pravatar.cc/100?img=30", name: "Billie Alice", role: "Course Creator", quote: "Enrollify completely changed how I monetize. Revenue doubled in 3 months. The analytics alone are worth every penny." },
-            { img: "https://i.pravatar.cc/100?img=45", name: "Ananya Mehta", role: "Tech Educator", quote: "The dashboard is insanely powerful and easy to use. My students love the clean enrollment flow. Premium experience." },
-            { img: "https://i.pravatar.cc/100?img=12", name: "Vikram Patel", role: "Business Coach", quote: "I've tried 5+ platforms — Enrollify is the one I'm sticking with. Secure access, beautiful UI, incredible support." },
-            { img: "https://i.pravatar.cc/100?img=33", name: "Priya Sharma", role: "Fitness Instructor", quote: "Setting up my first paid webinar took 10 minutes. The Razorpay integration is seamless. Already earned ₹80K in month one!" },
-          ].map((t, i) => (
+          {testimonials.map((t, i) => (
             <div className="testimonial-card" key={i}>
               <div className="tc-stars">★★★★★</div>
               <p>&ldquo;{t.quote}&rdquo;</p>
               <div className="tc-author">
-                <img src={t.img} alt={t.name} />
-                <div><strong>{t.name}</strong><span>{t.role}</span></div>
+                <div className="tc-avatar" style={{ background: bgFor(i) }}>{initialsFor(t.name)}</div>
+                <div>
+                  <strong>{t.name}</strong>
+                  <span>{t.role}</span>
+                </div>
               </div>
             </div>
           ))}
@@ -335,11 +382,11 @@ const LandingPage = () => {
         </div>
         <div className="faq-list">
           {[
-            { q: "Is there a free trial?", a: "Yes! Start with a 14-day free trial on any plan. No credit card required." },
-            { q: "What payment methods do you support?", a: "We support Razorpay (UPI, cards, net banking) and Stripe for international payments." },
-            { q: "Can I use my own domain?", a: "Yes — on the Elite plan, you can connect your custom domain for a fully branded experience." },
-            { q: "How do payouts work?", a: "Payouts are processed directly to your bank account or UPI. Settlement happens within 2-3 business days." },
-            { q: "Is my content secure?", a: "Absolutely. We use OTP-based verification, encrypted access, and session management to protect your premium content." },
+            { q: "Is there a free trial?", a: "Yes. Start with a 14-day free trial on any plan. No credit card required." },
+            { q: "What payment methods do you support?", a: "Razorpay (UPI, cards, net banking) and Stripe for international payments." },
+            { q: "Can I use my own domain?", a: "Yes — on the Elite plan, connect a custom domain for a fully branded experience." },
+            { q: "How do payouts work?", a: "Payouts go directly to your bank or UPI. Settlement in 2–3 business days." },
+            { q: "Is my content secure?", a: "OTP-based verification, encrypted access, and session management protect your premium content." },
             { q: "Can I cancel anytime?", a: "Yes, cancel anytime from your dashboard. No lock-in contracts, no cancellation fees." },
           ].map((faq, i) => (
             <div className={`faq-item ${openFaq === i ? "faq-open" : ""}`} key={i} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
@@ -372,11 +419,20 @@ const LandingPage = () => {
               {plan.featured && <div className="pc-badge">Most Popular</div>}
               <h3>{plan.name}</h3>
               <p className="pc-desc">{plan.desc}</p>
-              <div className="pc-price"><span className="pc-curr">₹</span><span className="pc-amt">{plan.price}</span><span className="pc-per">/mo</span></div>
+              <div className="pc-price">
+                <span className="pc-curr">₹</span>
+                <span className="pc-amt">{plan.price}</span>
+                <span className="pc-per">/mo</span>
+              </div>
               <div className="pc-divider"></div>
               <ul>
                 {plan.features.map((f, j) => (
-                  <li key={j}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{f}</li>
+                  <li key={j}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {f}
+                  </li>
                 ))}
               </ul>
               <button className={plan.featured ? "btn-primary3 btn-full" : "btn-outline3 btn-full"}>
@@ -393,7 +449,7 @@ const LandingPage = () => {
         <div className="deco-shape ds-10"></div>
         <div className="cta-inner3">
           <h2>Ready to turn your knowledge into revenue?</h2>
-          <p>Join 10,000+ creators who trust Enrollify to grow their business.</p>
+          <p>Launch your first paid webinar today — free for 14 days, no card required.</p>
           <div className="cta-btns3">
             <button className="btn-primary3 btn-lg" onClick={() => navigate("/signin")}>Start Free Trial &rarr;</button>
             <button className="btn-outline3 btn-lg" onClick={() => navigate("/signin")}>Book a Demo</button>
@@ -405,7 +461,10 @@ const LandingPage = () => {
       <footer className="footer3">
         <div className="footer-inner3">
           <div className="f-col3">
-            <div className="f-logo"><img src={logoImg} alt="Enrollify" className="logo-img3" /><span>Enrollify</span></div>
+            <div className="f-logo">
+              <img src={logoImg} alt="Enrollify" className="logo-img3" />
+              <span>Enrollify</span>
+            </div>
             <p>The premium platform for creators who are serious about growing their webinar business.</p>
           </div>
           <div className="f-col3">
@@ -422,7 +481,10 @@ const LandingPage = () => {
           </div>
           <div className="f-col3">
             <h4>Stay Updated</h4>
-            <div className="f-subscribe"><input type="email" placeholder="your@email.com" /><button>Join</button></div>
+            <div className="f-subscribe">
+              <input type="email" placeholder="your@email.com" />
+              <button>Join</button>
+            </div>
           </div>
         </div>
         <div className="f-bottom3"><p>&copy; 2026 Enrollify. All rights reserved.</p></div>
