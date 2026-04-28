@@ -5,7 +5,7 @@ import "./DashBoard.css";
 import { Search, Filter, MessageCircle, X, Download, Plus, LayoutGrid, List, Link, Edit2, BarChart2, Copy, MoreVertical, Wallet, Landmark, ArrowUpRight, DownloadCloud, CreditCard, Settings, Link2, ShieldCheck, RefreshCw, Mail, MessageSquare, Activity, CheckCircle2, User, Globe, Palette, Bell, Lock, Trash2, FileText, RotateCcw, AlertCircle, LifeBuoy } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
-import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI, getClientAudienceAPI, getClientSubscriptionAPI, getClientProfileAPI, updateClientProfileAPI, downloadAudienceCsv, downloadWebinarRegistrationsCsv } from "../api/clientApi";
+import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI, getClientAudienceAPI, getClientSubscriptionAPI, getClientProfileAPI, updateClientProfileAPI, downloadAudienceCsv, downloadWebinarRegistrationsCsv, createOrderAPI, verifyPaymentAPI } from "../api/clientApi";
 import { API_BASE } from "../api/config.js";
 import logoImg from "../assets/Logo.jpeg";
 import TemplateGallery from "./TemplateGallery";
@@ -581,7 +581,7 @@ const AnalyticsSection = ({ selectedPlan, setActiveTab, dashboardStats, webinarS
                     <Lock size={48} className="lock-icon-glow" />
                     <h2>Advanced Analytics is Locked</h2>
                     <p>Upgrade to Growth or Elite plan to unlock conversion funnel, traffic sources, and device breakdown.</p>
-                    <button className="primary-glow-btn" onClick={() => setActiveTab("Overview")}>Upgrade Now</button>
+                    <button className="primary-glow-btn" onClick={() => setActiveTab("Billing")}>Upgrade Now</button>
                 </div>
             </div>
         )}
@@ -1093,7 +1093,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
 
 
 
-const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActiveTab, selectPlan, paymentMethods, onEditPayment, onAddPayment, subscriptionData, backendPlans = [], dashboardStats = {} }) => (
+const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActiveTab, selectPlan, isUpgrading, paymentMethods, onEditPayment, onAddPayment, subscriptionData, backendPlans = [], dashboardStats = {} }) => (
     <div className="billing-section">
         <div className="billing-hero-card">
             <div className="billing-hero-header">
@@ -1127,8 +1127,8 @@ const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActive
                                 <CheckCircle2 size={14} /> Running
                             </div>
                         ) : (
-                            <button className="upgrade-mini-btn" onClick={() => selectPlan && selectPlan(plan.name)}>
-                                Upgrade to this plan
+                            <button className="upgrade-mini-btn" disabled={isUpgrading} onClick={() => selectPlan && selectPlan(plan.name)}>
+                                {isUpgrading ? "Processing..." : "Upgrade to this plan"}
                             </button>
                         )}
                     </div>
@@ -1782,11 +1782,111 @@ const DashBoard = () => {
         }
     }, [subscriptionData]);
 
+    const [isUpgrading, setIsUpgrading] = useState(false);
+
+    const loadRazorpayScript = () => new Promise((resolve) => {
+        if (window.Razorpay) return resolve(true);
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+
+    const directUpgrade = async (planName) => {
+        try {
+            setIsUpgrading(true);
+            // 1. Load profile + plans
+            const [profile, plansRes] = await Promise.all([
+                getClientProfileAPI().catch(() => null),
+                fetch(`${API_BASE}/api/subscriptions`).then(r => r.ok ? r.json() : null).catch(() => null)
+            ]);
+            if (!profile) {
+                alert("Please complete your profile first.");
+                navigate("/client-form");
+                return;
+            }
+            const plans = Array.isArray(plansRes) ? plansRes : (plansRes?.data || []);
+            const targetPlan = plans.find(p => p.name?.toLowerCase() === planName.toLowerCase());
+            if (!targetPlan?._id) {
+                alert("Plan not found. Please try again.");
+                return;
+            }
+
+            // 2. Create order
+            const profilePayload = {
+                subscriptionId: targetPlan._id,
+                subscription: targetPlan._id,
+                subscription_id: targetPlan._id,
+                first_name: profile.first_name,
+                last_name: profile.last_name,
+                Organization_Name: profile.Organization_Name,
+                subdomain: profile.subdomain,
+                phone: profile.phone,
+                email: profile.user?.email || profile.email,
+                gstNumber: profile.gstNumber || "",
+                upiId: profile.upiId || "",
+                paymentMode: profile.upiId ? "upi" : "bank"
+            };
+            const orderResponse = await createOrderAPI(profilePayload);
+            if (!orderResponse?.orderId) throw new Error("Failed to create order");
+
+            // 3. Open Razorpay
+            const isLoaded = await loadRazorpayScript();
+            if (!isLoaded) {
+                alert("Razorpay failed to load. Check your internet connection.");
+                return;
+            }
+
+            const options = {
+                key: "rzp_test_SSXUTDOiQwjhed",
+                amount: orderResponse.amount,
+                currency: orderResponse.currency || "INR",
+                name: "Enrollify",
+                description: `Upgrade to ${planName} plan`,
+                order_id: orderResponse.orderId,
+                handler: async (response) => {
+                    try {
+                        await verifyPaymentAPI({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            subscriptionId: targetPlan._id,
+                            subscription: targetPlan._id,
+                            subscription_id: targetPlan._id,
+                            profileData: profilePayload
+                        });
+                        alert(`Successfully upgraded to ${planName} plan! Refreshing...`);
+                        window.location.reload();
+                    } catch (err) {
+                        alert("Payment verification failed: " + (err.message || "Unknown error"));
+                    }
+                },
+                prefill: {
+                    name: `${profile.first_name || ""} ${profile.last_name || ""}`.trim(),
+                    email: profile.user?.email || profile.email || "",
+                    contact: profile.phone || ""
+                },
+                theme: { color: "#6574e9" }
+            };
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+        } catch (err) {
+            alert("Upgrade failed: " + (err.message || "Please try again"));
+        } finally {
+            setIsUpgrading(false);
+        }
+    };
+
     const selectPlan = (plan) => {
         if (selectedPlan === plan && !isProfileMissing) {
-            // Already running this plan AND profile exists
-            alert(`You are currently on the ${plan} plan. You can create webinars directly from the Webinars tab!`);
+            alert(`You are currently on the ${plan} plan. You can create webinars from the Webinars tab.`);
             setActiveTab("Webinars");
+            return;
+        }
+        // Has profile = direct upgrade. No profile = first signup, go to form.
+        if (!isProfileMissing) {
+            directUpgrade(plan);
             return;
         }
         localStorage.setItem("selectedPlanIntent", plan);
@@ -2169,6 +2269,7 @@ const DashBoard = () => {
                             selectedPlan={selectedPlan}
                             setActiveTab={setActiveTab}
                             selectPlan={selectPlan}
+                            isUpgrading={isUpgrading}
                             paymentMethods={paymentMethods}
                             onEditPayment={openEditPayment}
                             onAddPayment={openAddPayment}
