@@ -2022,7 +2022,18 @@ const AdminDashboard = () => {
       }
 
       case "coupons": {
-        return <CouponManager />;
+        return (
+          <div className="coming-soon-card" style={{ padding: "60px 40px", textAlign: "center", background: "linear-gradient(135deg, #6574e9 0%, #8b5cf6 100%)", borderRadius: 24, color: "white", margin: 40, boxShadow: "0 20px 60px rgba(101, 116, 233, 0.3)" }}>
+            <div style={{ fontSize: 64, marginBottom: 16 }}>🏷️</div>
+            <h1 style={{ fontSize: 36, marginBottom: 12, fontWeight: 700 }}>Coupons — Coming Soon</h1>
+            <p style={{ fontSize: 18, opacity: 0.9, maxWidth: 520, margin: "0 auto", lineHeight: 1.6 }}>
+              We're building a powerful coupon system with bulk codes, usage limits, expiry rules, and analytics. Launching in the next update.
+            </p>
+            <div style={{ marginTop: 24, display: "inline-block", padding: "8px 20px", background: "rgba(255,255,255,0.2)", borderRadius: 999, fontSize: 14, fontWeight: 500 }}>
+              🚀 In Development
+            </div>
+          </div>
+        );
       }
 
       case "settings": {

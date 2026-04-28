@@ -1093,7 +1093,7 @@ const RevenueSection = ({ dashboardStats, setActiveTab, audienceList = [], subsc
 
 
 
-const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActiveTab, paymentMethods, onEditPayment, onAddPayment, subscriptionData, backendPlans = [], dashboardStats = {} }) => (
+const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActiveTab, selectPlan, paymentMethods, onEditPayment, onAddPayment, subscriptionData, backendPlans = [], dashboardStats = {} }) => (
     <div className="billing-section">
         <div className="billing-hero-card">
             <div className="billing-hero-header">
@@ -1127,7 +1127,7 @@ const BillingSection = ({ billingCycle, setBillingCycle, selectedPlan, setActive
                                 <CheckCircle2 size={14} /> Running
                             </div>
                         ) : (
-                            <button className="upgrade-mini-btn" onClick={() => setActiveTab("Overview")}>
+                            <button className="upgrade-mini-btn" onClick={() => selectPlan && selectPlan(plan.name)}>
                                 Upgrade to this plan
                             </button>
                         )}
@@ -2168,6 +2168,7 @@ const DashBoard = () => {
                             billingCycle={billingCycle} setBillingCycle={setBillingCycle}
                             selectedPlan={selectedPlan}
                             setActiveTab={setActiveTab}
+                            selectPlan={selectPlan}
                             paymentMethods={paymentMethods}
                             onEditPayment={openEditPayment}
                             onAddPayment={openAddPayment}
