@@ -16,10 +16,11 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import AdminTemplateManager from "./AdminTemplateManager";
 import WhatsAppPanel from "./WhatsAppPanel";
 import SupportPage from "./SupportPage";
+import CouponManager from "./CouponManager";
 import logoImg from "../assets/Logo.jpeg";
 import { AVAILABLE_TEMPLATES } from "./templates/templateRegistry";
 import { fetchAllTemplates } from "../api/templateApi";
-import { IndianRupee, Users, Ticket, Crown, CheckCircle, Plus, Download, AlertCircle, Search, Filter, MoreVertical, X, User, ChevronLeft, ChevronRight, UserX, Unlock, LogOut, Video, Calendar, Eye, Activity, Ban, Settings, Key, Shield, Bell, Save, ToggleLeft, ToggleRight, Smartphone, Mail, CreditCard, Lock, BarChart3, TrendingUp, Globe, Monitor, Share2, MapPin, ClipboardList } from 'lucide-react';
+import { IndianRupee, Users, Ticket, Crown, CheckCircle, Plus, Download, AlertCircle, Search, Filter, MoreVertical, X, User, ChevronLeft, ChevronRight, UserX, Unlock, LogOut, Video, Calendar, Eye, Activity, Ban, Settings, Key, Shield, Bell, Save, ToggleLeft, ToggleRight, Smartphone, Mail, CreditCard, Lock, BarChart3, TrendingUp, Globe, Monitor, Share2, MapPin, ClipboardList, Tag } from 'lucide-react';
 
 
 
@@ -2020,6 +2021,10 @@ const AdminDashboard = () => {
         return <SupportPage isAdmin={true} />;
       }
 
+      case "coupons": {
+        return <CouponManager />;
+      }
+
       case "settings": {
         return (
           <div className="settings-page">
@@ -2274,6 +2279,9 @@ const AdminDashboard = () => {
           <li className={activeTab === "whatsapp" ? "active" : ""} onClick={() => setActiveTab("whatsapp")}>
             <Smartphone size={20} /> WhatsApp
           </li>
+          <li className={activeTab === "coupons" ? "active" : ""} onClick={() => setActiveTab("coupons")}>
+            <Tag size={20} /> Coupons
+          </li>
           <li className={activeTab === "support" ? "active" : ""} onClick={() => setActiveTab("support")}>
             <Shield size={20} /> Support
           </li>
@@ -2309,6 +2317,7 @@ const AdminDashboard = () => {
             {activeTab === "subscriptions" && "Subscriptions"}
             {activeTab === "templates" && "Templates"}
             {activeTab === "whatsapp" && "WhatsApp Management"}
+            {activeTab === "coupons" && "Coupons"}
             {activeTab === "support" && "Support Tickets"}
             {activeTab === "settings" && "Admin Settings"}
           </h1>

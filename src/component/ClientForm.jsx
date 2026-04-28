@@ -85,6 +85,21 @@ function ClientForm() {
 
   const [errors, setErrors] = useState({});
   const [subdomainStatus, setSubdomainStatus] = useState(null); // null | "checking" | "available" | "taken"
+  // Track whether the user has manually edited the subdomain field. Once true,
+  // we stop auto-syncing it from the Organization name so we don't clobber
+  // their custom choice.
+  const [subdomainTouched, setSubdomainTouched] = useState(false);
+
+  // Slugify org name for the subdomain hint: lowercase, strip non-alphanum,
+  // collapse to a max-length token. Mirrors backend rules so the suggestion
+  // is identical to what Mongo will accept.
+  const slugifyForSubdomain = (raw) =>
+    String(raw || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "")
+      .slice(0, 32);
 
   // Pre-fill form if client already has a profile (upgrade flow)
   useEffect(() => {
@@ -109,8 +124,13 @@ function ClientForm() {
             upi: profile.upiId || prev.upi,
           }));
           if (profile.upiId) setPaymentMode("upi");
-          // Mark subdomain as available since it's their own
-          if (profile.subdomain) setSubdomainStatus("available");
+          // Mark subdomain as available since it's their own. Also lock
+          // subdomain auto-sync so changing the Organization name doesn't
+          // overwrite their already-saved brand subdomain.
+          if (profile.subdomain) {
+            setSubdomainStatus("available");
+            setSubdomainTouched(true);
+          }
         }
       } catch (err) {
         // No profile yet — first-time flow, keep form empty
@@ -209,7 +229,27 @@ function ClientForm() {
     const { name, value } = e.target;
     const error = validateField(name, value);
 
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+
+      // Auto-suggest subdomain from organization name as the user types,
+      // but only while the user hasn't customized the subdomain field.
+      // Trying to support both flows: if they type org first then subdomain
+      // is filled in for them; if they edit subdomain manually we lock it.
+      if (name === "organization" && !subdomainTouched) {
+        next.subdomain = slugifyForSubdomain(value);
+      }
+
+      // Sanitize subdomain on every keystroke so what the user sees is
+      // exactly what gets submitted (no spaces, no symbols, lowercase).
+      if (name === "subdomain") {
+        next.subdomain = slugifyForSubdomain(value);
+        setSubdomainTouched(true);
+      }
+
+      return next;
+    });
+
     setErrors({ ...errors, [name]: error });
   };
 

@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { createWebinarAPI, updateWebinarAPI } from "../api/webinarApi";
 import { getClientSubscriptionAPI } from "../api/clientApi";
 import { fetchMyTierTemplates } from "../api/templateApi";
+import { API_BASE } from "../api/config.js";
 
 function CreateWebinar() {
   const navigate = useNavigate();
@@ -78,6 +79,8 @@ function CreateWebinar() {
     bannerImageFile: null,
     meetingLink: editData?.meetingLink || "",
     status: editData?.status?.toLowerCase() || "published",
+    useZoom: !!editData?.zoom?.meetingId,
+    zoomHostEmail: editData?.zoom?.hostEmail || "",
 
     // Step 2: Speaker
     speakerName: editData?.speakerName || "",
@@ -96,7 +99,44 @@ function CreateWebinar() {
     trustLogos: editData?.trustLogos || [""],
     ctaText: editData?.ctaText || "",
     bonusText: editData?.bonusText || "",
+
+    // Custom registration form fields (host-defined)
+    customFields: editData?.customFields?.map(({ _id, ...rest }) => rest) || [],
   });
+
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleAIDescription = async () => {
+    if (!formData.title.trim()) {
+      setErrorMsg("Please enter a webinar title first so AI can generate a description.");
+      return;
+    }
+    setAiLoading(true);
+    setErrorMsg("");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/ai/generate-description`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          categories: formData.categories,
+          speakerName: formData.speakerName,
+          language: formData.language,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate");
+      setFormData((prev) => ({ ...prev, description: data.description }));
+    } catch (err) {
+      setErrorMsg(err.message || "AI generation failed. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const categoriesList = [
     "Marketing", "Business", "Technology", "Finance",
@@ -145,6 +185,51 @@ function CreateWebinar() {
     const arr = [...formData[key]];
     arr[index] = { ...arr[index], [field]: value };
     setFormData({ ...formData, [key]: arr });
+  };
+
+  // ===== CUSTOM FIELDS BUILDER HELPERS =====
+  const generateFieldId = () =>
+    `field_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const addCustomField = () => {
+    const newField = {
+      fieldId: generateFieldId(),
+      label: "",
+      type: "text",
+      required: false,
+      options: [],
+      placeholder: "",
+      helpText: "",
+      order: formData.customFields.length,
+    };
+    setFormData({ ...formData, customFields: [...formData.customFields, newField] });
+  };
+
+  const updateCustomField = (index, key, value) => {
+    const arr = [...formData.customFields];
+    arr[index] = { ...arr[index], [key]: value };
+    setFormData({ ...formData, customFields: arr });
+  };
+
+  const updateCustomFieldOptions = (index, optionsString) => {
+    const arr = [...formData.customFields];
+    arr[index] = { ...arr[index], options: optionsString.split(",").map(o => o.trim()).filter(Boolean) };
+    setFormData({ ...formData, customFields: arr });
+  };
+
+  const removeCustomField = (index) => {
+    const arr = [...formData.customFields];
+    arr.splice(index, 1);
+    setFormData({ ...formData, customFields: arr });
+  };
+
+  const moveCustomField = (index, direction) => {
+    const arr = [...formData.customFields];
+    const target = index + direction;
+    if (target < 0 || target >= arr.length) return;
+    [arr[index], arr[target]] = [arr[target], arr[index]];
+    arr.forEach((f, i) => { f.order = i; });
+    setFormData({ ...formData, customFields: arr });
   };
 
   const handleSubmit = async () => {
@@ -199,6 +284,15 @@ function CreateWebinar() {
       trustLogos: formData.trustLogos.filter(l => l.trim()),
       ctaText: formData.ctaText,
       bonusText: formData.bonusText,
+
+      // Custom registration form fields (filter out fields without labels)
+      customFields: formData.customFields
+        .filter((f) => f.label && f.label.trim())
+        .map((f, i) => ({ ...f, order: i })),
+
+      // Zoom auto-create
+      useZoom: !!formData.useZoom,
+      zoomHostEmail: formData.zoomHostEmail || undefined,
     };
 
     if (formData.bannerImageFile) {
@@ -382,7 +476,16 @@ function CreateWebinar() {
 
               <div className="cw-field">
                 <label className="cw-label">Description <span className="cw-req">*</span></label>
-                <textarea name="description" value={formData.description} placeholder="Tell attendees what this webinar is about, what they'll learn, and why they should join..." required onChange={handleChange} rows={4} />
+                <div className="cw-desc-wrap">
+                  <textarea name="description" value={formData.description} placeholder="Tell attendees what this webinar is about, what they'll learn, and why they should join..." required onChange={handleChange} rows={4} />
+                  <button type="button" className="cw-ai-btn" onClick={handleAIDescription} disabled={aiLoading}>
+                    {aiLoading ? (
+                      <><span className="cw-ai-spinner" /> Generating...</>
+                    ) : (
+                      <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg> Write with AI</>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Categories */}
@@ -455,9 +558,44 @@ function CreateWebinar() {
                   <input name="language" value={formData.language} placeholder="e.g. English" onChange={handleChange} />
                 </div>
                 <div className="cw-field">
-                  <label className="cw-label">Meeting Link <span className="cw-hint">(Zoom / Google Meet)</span></label>
+                  <label className="cw-label">Meeting Link <span className="cw-hint">(Zoom / Google Meet — paste manually OR use auto-Zoom below)</span></label>
                   <input name="meetingLink" value={formData.meetingLink} placeholder="https://meet.google.com/..." onChange={handleChange} />
                 </div>
+              </div>
+
+              <div className="cw-field" style={{ marginTop: 8, padding: "12px 14px", background: "#f8f9fb", border: "1px solid #e5e7eb", borderRadius: 10 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={!!formData.useZoom}
+                    onChange={(e) => setFormData({ ...formData, useZoom: e.target.checked })}
+                  />
+                  <span style={{ fontSize: 14, color: "#1a1a35", fontWeight: 600 }}>
+                    Auto-create a Zoom meeting for this webinar
+                  </span>
+                </label>
+                {formData.useZoom && (
+                  <div style={{ marginTop: 10 }}>
+                    <input
+                      name="zoomHostEmail"
+                      value={formData.zoomHostEmail || ""}
+                      onChange={handleChange}
+                      placeholder="Zoom host email (leave empty to use account default)"
+                      style={{ width: "100%" }}
+                    />
+                    <small style={{ color: "#6b7280", display: "block", marginTop: 6 }}>
+                      Cloud recording will be enabled automatically and pulled in after the webinar ends.
+                    </small>
+                    <div style={{ marginTop: 10, padding: "10px 12px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 8, fontSize: 13, color: "#92400e", lineHeight: 1.5 }}>
+                      <strong>Heads up — Zoom Free plan limit:</strong> meetings auto-end after <strong>40 minutes</strong>.
+                      {Number(formData.durationMinutes) > 40 && (
+                        <span style={{ display: "block", marginTop: 4, fontWeight: 600 }}>
+                          ⚠ Your webinar is set to {formData.durationMinutes} min — Zoom will cut off after 40 min. Either shorten the duration, paste your own meeting link above, or upgrade Zoom.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid">
@@ -601,6 +739,80 @@ function CreateWebinar() {
                 <input name="ctaText" value={formData.ctaText} placeholder="Custom CTA Button Text (e.g. Reserve My Spot)" onChange={handleChange} />
                 <input name="bonusText" value={formData.bonusText} placeholder="Bonus Text (e.g. FREE E-book Included)" onChange={handleChange} />
               </div>
+
+              <h2 style={{ marginTop: 24 }}>Custom Registration Questions</h2>
+              <p style={{ color: "#6b7280", fontSize: "13px", marginBottom: "12px" }}>
+                Ask attendees extra questions during registration (e.g. "What's your biggest goal?", "Monthly revenue?"). Optional.
+              </p>
+
+              {formData.customFields.map((field, i) => (
+                <div key={field.fieldId || i} style={{ marginBottom: "14px", background: "#fafafa", padding: "14px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
+                    <strong style={{ color: "#6b7280", fontSize: "12px" }}>Field {i + 1}</strong>
+                    <button type="button" onClick={() => moveCustomField(i, -1)} disabled={i === 0} style={{ padding: "4px 8px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", cursor: i === 0 ? "not-allowed" : "pointer", fontSize: "12px" }}>↑</button>
+                    <button type="button" onClick={() => moveCustomField(i, 1)} disabled={i === formData.customFields.length - 1} style={{ padding: "4px 8px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", cursor: i === formData.customFields.length - 1 ? "not-allowed" : "pointer", fontSize: "12px" }}>↓</button>
+                    <div style={{ flex: 1 }} />
+                    <button type="button" onClick={() => removeCustomField(i)} style={{ padding: "4px 12px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}>Remove</button>
+                  </div>
+
+                  <div className="grid">
+                    <input
+                      value={field.label}
+                      placeholder="Field label (e.g. What's your monthly revenue?)"
+                      onChange={(e) => updateCustomField(i, "label", e.target.value)}
+                    />
+                    <select value={field.type} onChange={(e) => updateCustomField(i, "type", e.target.value)}>
+                      <option value="text">Short text</option>
+                      <option value="textarea">Long text</option>
+                      <option value="number">Number</option>
+                      <option value="email">Email</option>
+                      <option value="tel">Phone</option>
+                      <option value="select">Dropdown</option>
+                      <option value="radio">Radio (single choice)</option>
+                      <option value="checkbox">Checkbox (multi choice)</option>
+                    </select>
+                  </div>
+
+                  <div className="grid">
+                    <input
+                      value={field.placeholder || ""}
+                      placeholder="Placeholder (optional)"
+                      onChange={(e) => updateCustomField(i, "placeholder", e.target.value)}
+                    />
+                    <input
+                      value={field.helpText || ""}
+                      placeholder="Help text below field (optional)"
+                      onChange={(e) => updateCustomField(i, "helpText", e.target.value)}
+                    />
+                  </div>
+
+                  {(field.type === "select" || field.type === "radio" || field.type === "checkbox") && (
+                    <input
+                      value={(field.options || []).join(", ")}
+                      placeholder="Options (comma-separated, e.g. 0-25k, 25k-1L, 1L+)"
+                      onChange={(e) => updateCustomFieldOptions(i, e.target.value)}
+                      style={{ marginTop: "8px" }}
+                    />
+                  )}
+
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px", cursor: "pointer", fontSize: "13px", color: "#374151" }}>
+                    <input
+                      type="checkbox"
+                      checked={!!field.required}
+                      onChange={(e) => updateCustomField(i, "required", e.target.checked)}
+                    />
+                    Required
+                  </label>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addCustomField}
+                style={{ padding: "8px 16px", background: "rgba(101,116,233,0.1)", color: "#6574e9", border: "1px solid rgba(101,116,233,0.3)", borderRadius: "8px", cursor: "pointer", marginBottom: "24px", fontSize: "13px" }}
+              >
+                + Add Question
+              </button>
             </>
           )}
 

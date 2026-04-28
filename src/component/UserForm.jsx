@@ -1,7 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { User, Mail, MapPin, Phone, CreditCard, ArrowRight, CheckCircle2 } from "lucide-react";
+import { User, Mail, MapPin, Phone, CreditCard, ArrowRight, CheckCircle2, Tag } from "lucide-react";
 import "./UserForm.css";
-import { registerUserAPI, verifyPaymentAPI } from "../api/userApi";
+import { registerUserAPI, verifyPaymentAPI, validateCouponAPI } from "../api/userApi";
+
+// Capture UTM + referrer from URL on first load (also persists via sessionStorage so navigation doesn't lose them)
+const captureUtm = () => {
+  try {
+    const cached = sessionStorage.getItem("utmData");
+    if (cached) return JSON.parse(cached);
+
+    const params = new URLSearchParams(window.location.search);
+    const utm = {
+      source: params.get("utm_source") || "",
+      medium: params.get("utm_medium") || "",
+      campaign: params.get("utm_campaign") || "",
+      term: params.get("utm_term") || "",
+      content: params.get("utm_content") || "",
+      referrer: document.referrer || "",
+      landingUrl: window.location.href,
+    };
+    sessionStorage.setItem("utmData", JSON.stringify(utm));
+    return utm;
+  } catch {
+    return {};
+  }
+};
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -50,6 +73,62 @@ function UserForm() {
   const isPaid = price !== "0" && price !== 0;
   const webinarId = webinarData.id || webinarData._id || localStorage.getItem("currentWebinarId") || "";
 
+  // Custom fields defined by the host on this webinar
+  const customFields = Array.isArray(webinarData.customFields) ? webinarData.customFields : [];
+
+  // Custom field responses (keyed by fieldId)
+  const [customResponses, setCustomResponses] = useState({});
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [couponStatus, setCouponStatus] = useState(null); // null | "checking" | "valid" | "invalid"
+  const [couponInfo, setCouponInfo] = useState(null); // { discountAmount, finalPrice, message }
+  const [couponError, setCouponError] = useState("");
+
+  // UTM captured once on mount
+  const [utmData] = useState(() => captureUtm());
+
+  const handleCustomChange = (fieldId, value) => {
+    setCustomResponses((prev) => ({ ...prev, [fieldId]: value }));
+  };
+
+  const handleCustomCheckbox = (fieldId, option, checked) => {
+    setCustomResponses((prev) => {
+      const current = Array.isArray(prev[fieldId]) ? prev[fieldId] : [];
+      const next = checked ? [...current, option] : current.filter((o) => o !== option);
+      return { ...prev, [fieldId]: next };
+    });
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) {
+      setCouponError("Enter a coupon code");
+      return;
+    }
+    setCouponError("");
+    setCouponStatus("checking");
+    try {
+      const res = await validateCouponAPI({ code, webinarId });
+      if (res.valid) {
+        setCouponStatus("valid");
+        setCouponInfo({
+          discountAmount: res.discountAmount,
+          finalPrice: res.finalPrice,
+          message: res.message || `${res.discountAmount} off applied`,
+        });
+      } else {
+        setCouponStatus("invalid");
+        setCouponInfo(null);
+        setCouponError(res.message || "Invalid coupon");
+      }
+    } catch (err) {
+      setCouponStatus("invalid");
+      setCouponInfo(null);
+      setCouponError(err.message || "Could not validate coupon");
+    }
+  };
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({});
@@ -92,6 +171,15 @@ function UserForm() {
       if (!formData.phone.trim()) newErrors.phone = "Phone is required";
     }
 
+    // Validate required custom fields
+    customFields.forEach((field) => {
+      if (!field.required) return;
+      const val = customResponses[field.fieldId];
+      const empty = val === undefined || val === null || val === "" ||
+        (Array.isArray(val) && val.length === 0);
+      if (empty) newErrors[`cf_${field.fieldId}`] = `${field.label} is required`;
+    });
+
     if (isPaid) {
       if (formData.paymentMethod === "upi") {
         if (!formData.upiId || formData.upiId.trim() === "") {
@@ -128,6 +216,9 @@ function UserForm() {
       paymentMethod: formData.paymentMethod,
       upiId: formData.upiId,
       cardNumber: formData.cardNumber,
+      customResponses,
+      utm: utmData,
+      ...(couponStatus === "valid" && couponCode ? { couponCode: couponCode.trim().toUpperCase() } : {}),
       // Link to existing user account if logged in
       ...(isLoggedIn && storedUser?.id ? { userId: storedUser.id } : {})
     };
@@ -326,6 +417,152 @@ function UserForm() {
               onKeyDown={handleKeyDown}
             />
           </div>
+
+          {/* ===== HOST-DEFINED CUSTOM FIELDS ===== */}
+          {customFields.length > 0 && (
+            <div className="custom-fields-block">
+              {customFields
+                .slice()
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .map((field) => {
+                  const errKey = `cf_${field.fieldId}`;
+                  const errClass = errors[errKey] ? "input-error" : "";
+                  const value = customResponses[field.fieldId] ?? "";
+
+                  if (field.type === "textarea") {
+                    return (
+                      <div key={field.fieldId} className="input-group">
+                        <label>{field.label}{field.required ? " *" : ""}</label>
+                        <textarea
+                          rows={3}
+                          value={value}
+                          placeholder={field.placeholder || ""}
+                          onChange={(e) => handleCustomChange(field.fieldId, e.target.value)}
+                          className={errClass}
+                        />
+                        {field.helpText && <small style={{ color: "#6b7280" }}>{field.helpText}</small>}
+                        {errors[errKey] && <span className="error-text">{errors[errKey]}</span>}
+                      </div>
+                    );
+                  }
+
+                  if (field.type === "select") {
+                    return (
+                      <div key={field.fieldId} className="input-group">
+                        <label>{field.label}{field.required ? " *" : ""}</label>
+                        <select
+                          value={value}
+                          onChange={(e) => handleCustomChange(field.fieldId, e.target.value)}
+                          className={errClass}
+                        >
+                          <option value="">Select...</option>
+                          {(field.options || []).map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        {field.helpText && <small style={{ color: "#6b7280" }}>{field.helpText}</small>}
+                        {errors[errKey] && <span className="error-text">{errors[errKey]}</span>}
+                      </div>
+                    );
+                  }
+
+                  if (field.type === "radio") {
+                    return (
+                      <div key={field.fieldId} className="input-group">
+                        <label>{field.label}{field.required ? " *" : ""}</label>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                          {(field.options || []).map((opt) => (
+                            <label key={opt} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+                              <input
+                                type="radio"
+                                name={`cf_${field.fieldId}`}
+                                value={opt}
+                                checked={value === opt}
+                                onChange={() => handleCustomChange(field.fieldId, opt)}
+                              />
+                              <span>{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {field.helpText && <small style={{ color: "#6b7280" }}>{field.helpText}</small>}
+                        {errors[errKey] && <span className="error-text">{errors[errKey]}</span>}
+                      </div>
+                    );
+                  }
+
+                  if (field.type === "checkbox") {
+                    const arr = Array.isArray(customResponses[field.fieldId]) ? customResponses[field.fieldId] : [];
+                    return (
+                      <div key={field.fieldId} className="input-group">
+                        <label>{field.label}{field.required ? " *" : ""}</label>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                          {(field.options || []).map((opt) => (
+                            <label key={opt} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+                              <input
+                                type="checkbox"
+                                value={opt}
+                                checked={arr.includes(opt)}
+                                onChange={(e) => handleCustomCheckbox(field.fieldId, opt, e.target.checked)}
+                              />
+                              <span>{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {field.helpText && <small style={{ color: "#6b7280" }}>{field.helpText}</small>}
+                        {errors[errKey] && <span className="error-text">{errors[errKey]}</span>}
+                      </div>
+                    );
+                  }
+
+                  // text | number | email | tel
+                  return (
+                    <div key={field.fieldId} className="input-group">
+                      <label>{field.label}{field.required ? " *" : ""}</label>
+                      <input
+                        type={field.type === "number" ? "number" : field.type === "email" ? "email" : field.type === "tel" ? "tel" : "text"}
+                        value={value}
+                        placeholder={field.placeholder || ""}
+                        onChange={(e) => handleCustomChange(field.fieldId, e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className={errClass}
+                      />
+                      {field.helpText && <small style={{ color: "#6b7280" }}>{field.helpText}</small>}
+                      {errors[errKey] && <span className="error-text">{errors[errKey]}</span>}
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+
+          {/* ===== COUPON CODE (only for paid webinars) ===== */}
+          {isPaid && (
+            <div className="input-group">
+              <label><Tag size={16} /> Coupon Code (optional)</label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="text"
+                  value={couponCode}
+                  placeholder="Enter coupon"
+                  onChange={(e) => { setCouponCode(e.target.value); setCouponStatus(null); setCouponInfo(null); setCouponError(""); }}
+                  style={{ flex: 1, textTransform: "uppercase" }}
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={couponStatus === "checking" || !couponCode.trim()}
+                  style={{ padding: "0 16px", background: "#6574e9", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: 600 }}
+                >
+                  {couponStatus === "checking" ? "Checking..." : "Apply"}
+                </button>
+              </div>
+              {couponStatus === "valid" && couponInfo && (
+                <small style={{ color: "#16a34a", marginTop: "4px", display: "block" }}>
+                  ✓ {couponInfo.message} (Final: ₹{couponInfo.finalPrice})
+                </small>
+              )}
+              {couponError && <span className="error-text">{couponError}</span>}
+            </div>
+          )}
 
           {isPaid && (
             <>

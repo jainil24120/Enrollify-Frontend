@@ -359,19 +359,37 @@ section { scroll-margin-top: 80px; }
 .mockup-bar > span {
   width: 10px; height: 10px; border-radius: 50%;
   background: #3a3d5f;
+  flex: 0 0 auto;
 }
 .mockup-bar > span:nth-child(1) { background: #ff5f57; }
 .mockup-bar > span:nth-child(2) { background: #febc2e; }
 .mockup-bar > span:nth-child(3) { background: #28c840; }
 .mockup-url {
   margin-left: 14px;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 5px 12px;
   background: #0f1024;
   border-radius: 6px;
   font-size: 12px;
   color: #8b8fb3;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+  .mockup-url {
+    font-size: 11px;
+    margin-left: 8px;
+    padding: 4px 8px;
+  }
+  .mockup-bar {
+    padding: 8px 10px;
+    gap: 5px;
+  }
 }
 
 .hero-video {

@@ -89,11 +89,15 @@ function WhatsAppPanel({ isAdmin = false }) {
     setConnecting(true);
     setError("");
     setQrImage("");
+    // Optimistic: flip status so the loading skeleton renders immediately
+    // instead of waiting for the server response.
+    setStatus("qr_pending");
     try {
       await connectWhatsAppAPI();
     } catch (err) {
       setError(err.message);
       setConnecting(false);
+      setStatus("disconnected");
     }
   };
 
@@ -198,29 +202,43 @@ function WhatsAppPanel({ isAdmin = false }) {
           <span className="wa-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> WhatsApp Connection
         </h2>
 
+        {/*
+          Effective status: treat a qr_pending DB record without a live QR
+          AND without an active connect attempt as "disconnected" in the UI.
+          Otherwise a stale qr_pending record from a previous server run shows
+          "Waiting for QR scan..." with no button — the user is stuck.
+        */}
+        {(() => {
+          const effectiveStatus =
+            status === "qr_pending" && !qrImage && !connecting ? "disconnected" : status;
+          return (
         <div className="wa-status-card">
           <div className="wa-status-row">
-            <div className={`wa-status-dot ${status}`}></div>
+            <div className={`wa-status-dot ${effectiveStatus}`}></div>
             <div className="wa-status-info">
               <span className="wa-status-label">
-                {status === "connected" ? "Connected" : status === "qr_pending" ? "Waiting for QR scan..." : "Disconnected"}
+                {effectiveStatus === "connected"
+                  ? "Connected"
+                  : effectiveStatus === "qr_pending"
+                  ? (qrImage ? "Scan QR to connect" : "Generating QR code...")
+                  : "Disconnected"}
               </span>
               {phone && <span className="wa-phone">+{phone}</span>}
             </div>
             <div className="wa-status-actions">
-              {status === "disconnected" && (
+              {effectiveStatus === "disconnected" && (
                 <button className="wa-btn wa-btn-connect" onClick={handleConnect} disabled={connecting}>
                   {connecting ? "Initializing..." : "Connect WhatsApp"}
                 </button>
               )}
-              {status === "connected" && (
+              {effectiveStatus === "connected" && (
                 <button className="wa-btn wa-btn-disconnect" onClick={handleDisconnect}>Disconnect</button>
               )}
             </div>
           </div>
 
           {/* QR Code Display */}
-          {status === "qr_pending" && qrImage && (
+          {effectiveStatus === "qr_pending" && qrImage && (
             <div className="wa-qr-container">
               <p className="wa-qr-instruction">Open WhatsApp on your phone &gt; Settings &gt; Linked Devices &gt; Link a Device</p>
               <div className="wa-qr-wrapper">
@@ -230,14 +248,17 @@ function WhatsAppPanel({ isAdmin = false }) {
             </div>
           )}
 
-          {status === "qr_pending" && !qrImage && connecting && (
+          {effectiveStatus === "qr_pending" && !qrImage && connecting && (
             <div className="wa-qr-container">
-              <p className="wa-qr-instruction">Generating QR code... Please wait.</p>
+              <p className="wa-qr-instruction">Booting WhatsApp Web... QR appears in 5-15 seconds.</p>
+              <div className="wa-qr-skeleton" aria-hidden />
             </div>
           )}
 
           {error && <div className="wa-error">{error}</div>}
         </div>
+          );
+        })()}
       </div>
 
       {/* Only show features when connected */}

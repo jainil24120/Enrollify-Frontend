@@ -386,3 +386,52 @@
   .webinar-wrapper .form-card { padding: 24px 16px; border-radius: 20px; }
   .webinar-wrapper .form-card h1 { font-size: 1.4rem; }
 }
+
+/* ===== AI Description Button ===== */
+.cw-desc-wrap {
+  position: relative;
+}
+.cw-desc-wrap textarea {
+  padding-bottom: 48px;
+}
+.cw-ai-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #6574e9, #8b5cf6);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.cw-ai-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.cw-ai-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.cw-ai-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.cw-ai-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cw-spin 0.6s linear infinite;
+}
+@keyframes cw-spin {
+  to { transform: rotate(360deg); }
+}

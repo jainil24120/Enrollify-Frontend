@@ -1,36 +1,58 @@
 import "./LandingPage.css";
+import "./landing/landing-extras.css";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, MeshDistortMaterial } from "@react-three/drei";
-import demoVideo from "../assets/enrollify-demo.mp4";
+// Video is served from /public so Vite doesn't bundle the 15 MB asset.
+const demoVideo = "/enrollify-demo.mp4";
 import webinarImg from "../assets/webinar.png";
 import cardImg from "../assets/card.png";
 import socialImg from "../assets/social.png";
 import graphImg from "../assets/graph.png";
 import logoImg from "../assets/Logo.jpeg";
+import TrustStrip from "./landing/TrustStrip";
+import CreatorJourney from "./landing/CreatorJourney";
+import BuiltForYou from "./landing/BuiltForYou";
+import { STEP_ILLUSTRATIONS, IllustrationDefs } from "./landing/WorkflowIllustrations";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /* ===== 3D Blob ===== */
 const FloatingBlob = () => {
   const meshRef = useRef();
-  useFrame(({ clock }) => {
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
     if (meshRef.current) {
-      meshRef.current.rotation.x = Math.sin(clock.elapsedTime * 0.3) * 0.2;
-      meshRef.current.rotation.y = clock.elapsedTime * 0.15;
+      meshRef.current.rotation.x = Math.sin(t * 0.3) * 0.2;
+      meshRef.current.rotation.y = t * 0.15;
     }
   });
   return (
     <Float speed={1.5} rotationIntensity={0.3} floatIntensity={1.5}>
       <mesh ref={meshRef} scale={2.2}>
-        <icosahedronGeometry args={[1, 8]} />
+        {/* Subdivision dropped from 8 to 4 — reduces vertex count from ~40k
+            to ~2.5k and removes the GPU ReadPixels stalls flagged at runtime. */}
+        <icosahedronGeometry args={[1, 4]} />
         <MeshDistortMaterial color="#6574e9" emissive="#a2aef7" emissiveIntensity={0.3} roughness={0.3} metalness={0.7} distort={0.4} speed={2} transparent opacity={0.9} />
       </mesh>
     </Float>
   );
+};
+
+/* Quick WebGL detection — skip the Canvas entirely on devices without WebGL
+   (older mobile browsers, locked-down corporate machines, headless QA bots).
+   Returns null instead of throwing console errors and a black hole in the hero. */
+const hasWebGL = () => {
+  if (typeof window === "undefined") return false;
+  try {
+    const c = document.createElement("canvas");
+    return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
+  } catch {
+    return false;
+  }
 };
 
 /* ===== Inline icons ===== */
@@ -74,6 +96,9 @@ const LandingPage = () => {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
   const rootRef = useRef(null);
+  // WebGL probed once on mount; avoids the Three.js Canvas mounting on devices
+  // that would otherwise hit a "WebGL not supported" stack trace at runtime.
+  const [webglEnabled] = useState(() => hasWebGL());
 
   /* Nav scroll tracking */
   useEffect(() => {
@@ -95,7 +120,18 @@ const LandingPage = () => {
 
   /* GSAP animations — scoped to rootRef, proper cleanup */
   useEffect(() => {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const ctx = gsap.context(() => {
+      if (prefersReducedMotion) {
+        // Respect users who don't want motion — show everything immediately.
+        gsap.set(
+          ".hero-title, .hero-sub, .hero-ctas, .hero-visual, .sec-head, .stack-chip, .about-row, .wf-step, .feature-card, .stat-item, .testimonial-card, .faq-item, .pricing-card",
+          { opacity: 1, y: 0, clearProps: "all" }
+        );
+        return;
+      }
+
       gsap.fromTo(".hero-title", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power4.out" });
       gsap.fromTo(".hero-sub", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.2, ease: "power3.out" });
       gsap.fromTo(".hero-ctas", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, delay: 0.4, ease: "power3.out" });
@@ -120,7 +156,14 @@ const LandingPage = () => {
               duration: 0.65,
               delay: i * stag,
               ease: "power3.out",
-              scrollTrigger: { trigger: el, start: "top 93%", toggleActions: "play none none none" },
+              scrollTrigger: {
+                trigger: el,
+                // Trigger earlier and also fire when section is already in view
+                // on first paint (covers tall viewports + page reload at scroll position).
+                start: "top 95%",
+                toggleActions: "play none none none",
+                once: true,
+              },
             }
           );
         });
@@ -137,7 +180,38 @@ const LandingPage = () => {
       reveal(".pricing-card", 0.1);
     }, rootRef);
 
-    return () => ctx.revert();
+    // Recalculate ScrollTrigger positions after fonts load and after the hero
+    // image+video paint, so reveal triggers map to the final layout. Without
+    // this, sections can stay hidden when the page renders taller than the
+    // initial measurement (web font swap, video metadata load, mobile UI bars).
+    const refresh = () => ScrollTrigger.refresh();
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(refresh).catch(() => {});
+    }
+    window.addEventListener("load", refresh);
+    const refreshTimeout = setTimeout(refresh, 600);
+
+    // Safety net: if any reveal element is still hidden 2.5s after mount,
+    // force it visible. Belt-and-suspenders against ScrollTrigger edge cases
+    // (browser back/forward cache, blocked third-party scripts, etc).
+    const safetyTimeout = setTimeout(() => {
+      const stuck = rootRef.current?.querySelectorAll(
+        ".sec-head, .stack-chip, .about-row, .wf-step, .feature-card, .stat-item, .testimonial-card, .faq-item, .pricing-card"
+      );
+      stuck?.forEach((el) => {
+        const opacity = parseFloat(getComputedStyle(el).opacity);
+        if (opacity < 0.05) {
+          gsap.set(el, { opacity: 1, y: 0, clearProps: "transform" });
+        }
+      });
+    }, 2500);
+
+    return () => {
+      window.removeEventListener("load", refresh);
+      clearTimeout(refreshTimeout);
+      clearTimeout(safetyTimeout);
+      ctx.revert();
+    };
   }, []);
 
   const testimonials = [
@@ -214,20 +288,35 @@ const LandingPage = () => {
 
           <div className="hero-visual">
             <div className="blob-wrap">
-              <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-                <ambientLight intensity={0.5} />
-                <directionalLight position={[5, 5, 5]} intensity={1} color="#a2aef7" />
-                <pointLight position={[-5, -5, -5]} intensity={0.5} color="#6574e9" />
-                <Suspense fallback={null}><FloatingBlob /></Suspense>
-              </Canvas>
+              {webglEnabled && (
+                <Canvas
+                  camera={{ position: [0, 0, 5], fov: 50 }}
+                  dpr={[1, 1.5]}
+                  gl={{ antialias: true, powerPreference: "low-power" }}
+                  frameloop="always"
+                >
+                  <ambientLight intensity={0.5} />
+                  <directionalLight position={[5, 5, 5]} intensity={1} color="#a2aef7" />
+                  <pointLight position={[-5, -5, -5]} intensity={0.5} color="#6574e9" />
+                  <Suspense fallback={null}><FloatingBlob /></Suspense>
+                </Canvas>
+              )}
             </div>
 
             <div className="hero-mockup">
               <div className="mockup-bar">
                 <span></span><span></span><span></span>
-                <div className="mockup-url">enrollify.app/dashboard</div>
               </div>
-              <video className="hero-video" src={demoVideo} autoPlay loop muted playsInline />
+              <video
+                className="hero-video"
+                src={demoVideo}
+                poster={webinarImg}
+                preload="metadata"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
             </div>
 
             <div className="float-card3 fc3-1">
@@ -248,7 +337,11 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* tech stack section removed */}
+      {/* ===== Trust strip — verifiable product capabilities only ===== */}
+      <TrustStrip />
+
+      {/* ===== Product walkthrough — honest "how it works" with placeholder mocks ===== */}
+      <CreatorJourney />
 
       {/* ===== ABOUT ===== */}
       <section className="about3" id="about">
@@ -285,22 +378,31 @@ const LandingPage = () => {
           <p>From idea to income in minutes, not months</p>
         </div>
 
+        <IllustrationDefs />
         <div className="wf-grid3">
           {[
-            { num: "01", title: "Create Your Webinar", desc: "Set up content, upload a banner, add speaker details and design your premium learning experience.", img: webinarImg },
-            { num: "02", title: "Set Pricing & Plans", desc: "Choose free, paid, subscriptions or tier models — complete pricing freedom with Razorpay & Stripe.", img: cardImg },
-            { num: "03", title: "Promote Smartly", desc: "Share your branded link, embed on your site, or use smart targeting to reach the right audience.", img: socialImg },
-            { num: "04", title: "Track & Scale Revenue", desc: "Real-time analytics dashboard with revenue, conversions, and audience insights to scale confidently.", img: graphImg },
-          ].map((step, i) => (
-            <div className={`wf-step wf-${i % 2 === 0 ? "light" : "accent"}`} key={step.num}>
-              <div className="wf-num-badge">{step.num}</div>
-              <h3>{step.title}</h3>
-              <p>{step.desc}</p>
-              <div className="wf-img-wrap">
-                <img src={step.img} alt={step.title} />
+            { num: "01", title: "Create Your Webinar", desc: "Set up content, upload a banner, add speaker details and design your premium learning experience." },
+            { num: "02", title: "Set Pricing & Plans", desc: "Choose free, paid, subscriptions or tier models — complete pricing freedom with Razorpay & Stripe." },
+            { num: "03", title: "Promote Smartly", desc: "Share your branded link, embed on your site, or use smart targeting to reach the right audience." },
+            { num: "04", title: "Track & Scale Revenue", desc: "Real-time analytics dashboard with revenue, conversions, and audience insights to scale confidently." },
+          ].map((step, i) => {
+            const Illustration = STEP_ILLUSTRATIONS[i];
+            // Layout pattern: cards 1 and 4 are light, cards 2 and 3 are
+            // accent (indigo). Creates a contained sandwich shape across
+            // desktop and tablet where the eye flows in → into the colored
+            // middle → back out, instead of a strict ABAB stripe.
+            const variant = (i === 0 || i === 3) ? "light" : "accent";
+            return (
+              <div className={`wf-step wf-${variant}`} key={step.num}>
+                <div className="wf-num-badge">{step.num}</div>
+                <h3>{step.title}</h3>
+                <p>{step.desc}</p>
+                <div className="wf-img-wrap wf-illu-wrap">
+                  <Illustration />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -349,30 +451,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== TESTIMONIALS ===== */}
-      <section className="test3">
-        <div className="sec-head">
-          <span className="sec-chip">Testimonials</span>
-          <h2>Loved by <span className="gradient-text">Early Creators</span></h2>
-          <p>Direct feedback from our first wave of users</p>
-        </div>
-
-        <div className="test-grid3">
-          {testimonials.map((t, i) => (
-            <div className="testimonial-card" key={i}>
-              <div className="tc-stars">★★★★★</div>
-              <p>&ldquo;{t.quote}&rdquo;</p>
-              <div className="tc-author">
-                <div className="tc-avatar" style={{ background: bgFor(i) }}>{initialsFor(t.name)}</div>
-                <div>
-                  <strong>{t.name}</strong>
-                  <span>{t.role}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ===== Personas — who Enrollify is built for, no fake testimonials ===== */}
+      <BuiltForYou />
 
       {/* ===== FAQ ===== */}
       <section className="faq3" id="faq">
@@ -473,11 +553,11 @@ const LandingPage = () => {
           </div>
           <div className="f-col3">
             <h4>Company</h4>
-            <ul><li><a href="#">About Us</a></li><li><a href="#">Contact</a></li><li><a href="#">Careers</a></li></ul>
+            <ul><li><a href="/about">About Us</a></li><li><a href="/contact">Contact</a></li><li><a href="/careers">Careers</a></li></ul>
           </div>
           <div className="f-col3">
             <h4>Legal</h4>
-            <ul><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Service</a></li><li><a href="#">Refund Policy</a></li></ul>
+            <ul><li><a href="/privacy-policy">Privacy Policy</a></li><li><a href="/terms">Terms of Service</a></li><li><a href="/refund-policy">Refund Policy</a></li></ul>
           </div>
           <div className="f-col3">
             <h4>Stay Updated</h4>

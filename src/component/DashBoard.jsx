@@ -5,12 +5,14 @@ import "./DashBoard.css";
 import { Search, Filter, MessageCircle, X, Download, Plus, LayoutGrid, List, Link, Edit2, BarChart2, Copy, MoreVertical, Wallet, Landmark, ArrowUpRight, DownloadCloud, CreditCard, Settings, Link2, ShieldCheck, RefreshCw, Mail, MessageSquare, Activity, CheckCircle2, User, Globe, Palette, Bell, Lock, Trash2, FileText, RotateCcw, AlertCircle, LifeBuoy } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
-import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI, getClientAudienceAPI, getClientSubscriptionAPI, getClientProfileAPI, updateClientProfileAPI } from "../api/clientApi";
+import { getClientDashboardAPI, getClientWebinarStatsAPI, getClientAnalyticsAPI, getClientAudienceAPI, getClientSubscriptionAPI, getClientProfileAPI, updateClientProfileAPI, downloadAudienceCsv, downloadWebinarRegistrationsCsv } from "../api/clientApi";
 import { API_BASE } from "../api/config.js";
 import logoImg from "../assets/Logo.jpeg";
 import TemplateGallery from "./TemplateGallery";
 import WhatsAppPanel from "./WhatsAppPanel";
 import SupportPage from "./SupportPage";
+import InvoicesPanel from "./InvoicesPanel";
+import ReferralPanel from "./ReferralPanel";
 
 
 const generateZeroTrend = (days = 30) => {
@@ -79,54 +81,93 @@ class ErrorBoundary extends React.Component {
     }
 }
 
-const Sidebar = ({ activeTab, setActiveTab, selectedPlan, onLogout }) => {
-    const tabs = [
-        { name: "Overview", icon: <LayoutGrid size={18} /> },
-        { name: "Analytics", icon: <BarChart2 size={18} /> },
-        { name: "Webinars", icon: <Activity size={18} /> },
-        { name: "Templates", icon: <Palette size={18} /> },
-        { name: "Audience", icon: <User size={18} /> },
-        { name: "WhatsApp", icon: <MessageSquare size={18} /> },
-        { name: "Revenue", icon: <ArrowUpRight size={18} /> },
-        { name: "Billing", icon: <CreditCard size={18} /> },
-        { name: "Support", icon: <LifeBuoy size={18} /> },
-        { name: "Settings", icon: <Settings size={18} /> }
+const Sidebar = ({ activeTab, setActiveTab, selectedPlan }) => {
+    // Two-tier nav: daily-use tabs in the WORK group, less-frequent admin
+    // tabs in the BUSINESS group. Account-level tabs (Settings, Billing,
+    // Invoices, Support) live in the topbar profile dropdown — that drops
+    // the sidebar from 12 items down to 8 and removes the scrollbar.
+    const groups = [
+        {
+            label: "Work",
+            tabs: [
+                { name: "Overview", icon: <LayoutGrid size={18} /> },
+                { name: "Webinars", icon: <Activity size={18} /> },
+                { name: "Audience", icon: <User size={18} /> },
+                { name: "Analytics", icon: <BarChart2 size={18} /> },
+                { name: "WhatsApp", icon: <MessageSquare size={18} /> },
+            ],
+        },
+        {
+            label: "Business",
+            tabs: [
+                { name: "Templates", icon: <Palette size={18} /> },
+                { name: "Revenue", icon: <ArrowUpRight size={18} /> },
+                { name: "Referrals", icon: <ArrowUpRight size={18} /> },
+                { name: "Billing", icon: <CreditCard size={18} /> },
+            ],
+        },
     ];
-
-    const visibleTabs = selectedPlan ? tabs : [tabs[0]];
 
     return (
         <div className="sidebar">
             <div className="logo-container">
                 <img src={logoImg} alt="Enrollify" className="dashboard-logo" />
             </div>
-            <ul>
-                {visibleTabs.map((tab) => (
-                    <li
-                        key={tab.name}
-                        className={activeTab === tab.name ? "active" : ""}
-                        onClick={() => setActiveTab(tab.name)}
-                    >
-                        {tab.icon} {tab.name}
-                    </li>
+            <nav className="sidebar-nav">
+                {groups.map((group) => (
+                    <div key={group.label} className="sidebar-group">
+                        <p className="sidebar-group-label">{group.label}</p>
+                        <ul>
+                            {group.tabs
+                                .filter((t) => selectedPlan || t.name === "Overview")
+                                .map((tab) => (
+                                    <li
+                                        key={tab.name}
+                                        className={activeTab === tab.name ? "active" : ""}
+                                        onClick={() => setActiveTab(tab.name)}
+                                    >
+                                        {tab.icon} {tab.name}
+                                    </li>
+                                ))}
+                        </ul>
+                    </div>
                 ))}
-            </ul>
-            <div className="sidebar-logout" style={{ padding: '16px', marginTop: 'auto', borderTop: '1px solid #e5e7eb' }}>
-                <button
-                    onClick={onLogout}
-                    style={{ width: '100%', padding: '10px 16px', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                >
-                    Logout
-                </button>
-            </div>
+            </nav>
         </div>
     );
 };
 
-const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
-    const getInitials = (name) => {
-        if (!name) return "U";
-        return name.charAt(0).toUpperCase();
+const Topbar = ({ activeTab, profilePic, userName, userEmail, setActiveTab, onLogout }) => {
+    const [open, setOpen] = React.useState(false);
+    const menuRef = React.useRef(null);
+
+    // Initials: prefer two-letter (first + last) when name has spaces.
+    const initials = React.useMemo(() => {
+        if (!userName) return "U";
+        const parts = userName.trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return "U";
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }, [userName]);
+
+    // Close on outside click + Escape.
+    React.useEffect(() => {
+        if (!open) return;
+        const onClick = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+        };
+        const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+        document.addEventListener("mousedown", onClick);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", onClick);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [open]);
+
+    const go = (tab) => () => {
+        setActiveTab(tab);
+        setOpen(false);
     };
 
     return (
@@ -139,30 +180,106 @@ const Topbar = ({ activeTab, profilePic, userName, onProfileClick }) => {
                 {activeTab === "Webinars" && "Webinars"}
                 {activeTab === "Templates" && "Template Gallery"}
                 {activeTab === "Revenue" && "Revenue & Payouts"}
+                {activeTab === "Referrals" && "Refer & Earn"}
+                {activeTab === "Invoices" && "GST Invoices"}
                 {activeTab === "Billing" && "Billing / Plan"}
                 {activeTab === "Support" && "Help & Support"}
                 {activeTab === "Settings" && "Settings"}
             </h1>
-            <div className="profile" onClick={onProfileClick}>
-                <div className="profile-pic-container">
-                    {profilePic ? (
-                        <img src={profilePic} alt="Profile" className="topbar-profile-pic" />
-                    ) : (
-                        <div className="avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#6574e9', color: '#fff', fontSize: '16px', fontWeight: 'bold' }}>
-                            {getInitials(userName)}
+
+            <div className="profile-menu" ref={menuRef}>
+                <button
+                    type="button"
+                    className={`profile-trigger ${open ? "is-open" : ""}`}
+                    onClick={() => setOpen((v) => !v)}
+                    aria-haspopup="menu"
+                    aria-expanded={open}
+                >
+                    <div className="profile-avatar">
+                        {profilePic ? (
+                            <img src={profilePic} alt="" className="profile-avatar-img" />
+                        ) : (
+                            <span className="profile-avatar-initials">{initials}</span>
+                        )}
+                        <span className="profile-status-dot" aria-hidden />
+                    </div>
+                    <div className="profile-meta">
+                        <span className="profile-greeting">Welcome back</span>
+                        <span className="profile-name">{userName || "Creator"}</span>
+                    </div>
+                    <svg
+                        className={`profile-chevron ${open ? "rot" : ""}`}
+                        width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        aria-hidden
+                    >
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                </button>
+
+                {open && (
+                    <div className="profile-dropdown" role="menu">
+                        <div className="profile-dropdown-header">
+                            <div className="profile-avatar profile-avatar-lg">
+                                {profilePic ? (
+                                    <img src={profilePic} alt="" className="profile-avatar-img" />
+                                ) : (
+                                    <span className="profile-avatar-initials">{initials}</span>
+                                )}
+                            </div>
+                            <div>
+                                <p className="profile-dropdown-name">{userName || "Creator"}</p>
+                                <p className="profile-dropdown-email">{userEmail || ""}</p>
+                            </div>
                         </div>
-                    )}
-                </div>
-                <div className="profile-info-text">
-                    <span className="welcome-tag">Welcome Back</span>
-                    <span className="user-display-name">{userName}</span>
-                </div>
+
+                        <button className="profile-dropdown-item" onClick={go("Settings")} role="menuitem">
+                            <User size={16} /> View profile
+                        </button>
+                        <button className="profile-dropdown-item" onClick={go("Settings")} role="menuitem">
+                            <Settings size={16} /> Settings
+                        </button>
+
+                        <div className="profile-dropdown-sep" />
+
+                        <button
+                            className="profile-dropdown-item profile-dropdown-danger"
+                            onClick={() => { setOpen(false); onLogout(); }}
+                            role="menuitem"
+                        >
+                            <Lock size={16} /> Log out
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 const OverviewSection = ({ selectedPlan, selectPlan, subdomain, userName, clientOrg, setActiveTab, dashboardStats, subscriptionData, audienceList = [], backendPlans = [], webinarStats = [] }) => {
+    // No plan yet → show the pricing flow (this is the only thing the user
+    // can do, so the pricing-cards experience is correct here).
+    if (!selectedPlan) {
+        return <PricingFlow backendPlans={backendPlans} selectPlan={selectPlan} />;
+    }
+
+    // Active user → render the daily-use overview. No pricing cards.
+    return (
+        <ActiveOverview
+            userName={userName}
+            clientOrg={clientOrg}
+            selectedPlan={selectedPlan}
+            subscriptionData={subscriptionData}
+            dashboardStats={dashboardStats}
+            webinarStats={webinarStats}
+            audienceList={audienceList}
+            setActiveTab={setActiveTab}
+        />
+    );
+};
+
+// ===== Onboarding pricing screen — only shown to users WITHOUT a plan. =====
+const PricingFlow = ({ backendPlans, selectPlan }) => {
     const plans = backendPlans.map((plan) => {
         const f = plan.features || {};
         const features = [];
@@ -170,97 +287,282 @@ const OverviewSection = ({ selectedPlan, selectPlan, subdomain, userName, client
         else if (f.webinarsLimit) features.push(`${f.webinarsLimit} Active Webinar${f.webinarsLimit > 1 ? 's' : ''}`);
         if (f.subdomain) features.push("Enrollify Subdomain");
         if (f.customDomain) features.push("Custom Domain");
-        if (f.landingPageBuilder) features.push(`${f.landingPageBuilder === 'advanced' ? 'Advanced' : 'Basic'} Landing Page Builder`);
         if (f.emailAutomation && f.whatsappAutomation) features.push("Email + WhatsApp Automation");
         else if (f.emailAutomation) features.push("Email Reminders");
-        if (f.paymentGateways?.razorpay && f.paymentGateways?.stripe) features.push("Razorpay & Stripe");
-        else if (f.paymentGateways?.razorpay) features.push("Razorpay Integration");
         if (f.analytics) features.push("Analytics Dashboard");
         if (f.advancedAnalytics) features.push("Advanced Revenue Analytics");
-        if (f.metaPixel) features.push("Meta Pixel Tracking");
-        if (f.conversionTracking) features.push("Conversion Tracking Dashboard");
         if (f.affiliateSystem) features.push("Affiliate System");
         if (f.apiAccess) features.push("API Access");
         if (f.transactionFee) features.push(`${f.transactionFee}% Transaction Fee`);
         if (f.support) features.push(`${f.support.charAt(0).toUpperCase() + f.support.slice(1)} Support`);
-
         return {
             name: plan.name,
             price: `₹${plan.price}`,
             features,
-            btnText: plan.name === "Basic" ? "Start Basic" : plan.name === "Growth" ? "Go Growth" : "Upgrade to Elite",
+            btnText: plan.name === "Basic" ? "Start Basic" : plan.name === "Growth" ? "Go Growth" : "Get Elite",
             featured: plan.name === "Growth",
         };
     });
 
     return (
-        <>
-            {selectedPlan && (
-                <div className="stats-grid">
-                    <div className="stat-card"><h3>Total Webinars</h3><h2>{dashboardStats?.totalWebinars || dashboardStats?.total_webinars || 0}</h2></div>
-                    <div className="stat-card"><h3>Total Revenue</h3><h2>₹{(dashboardStats?.totalRevenue || dashboardStats?.total_revenue || 0).toLocaleString()}</h2></div>
-                    <div className="stat-card">
-                        <h3>Live Enrollment Link <Link2 size={14} style={{ display: "inline" }} /></h3>
-                        {webinarStats.length > 0 ? (
-                            <div className="link-card-content" style={{ flexDirection: "column", alignItems: "flex-start", gap: "6px" }}>
-                                <span className="tiny-link" style={{ fontSize: "0.72rem", lineHeight: "1.3" }}>
-                                    {window.location.origin}/w/{webinarStats[0]?.slug || ""}
-                                </span>
-                                <button className="copy-mini-btn" onClick={() => {
-                                    const link = `${window.location.origin}/w/${webinarStats[0]?.slug || ""}`;
-                                    navigator.clipboard.writeText(link);
-                                    alert("Link Copied!");
-                                }}>Copy Link</button>
-                            </div>
-                        ) : (
-                            <p style={{ fontSize: "0.78rem", color: "#6b7280" }}>Create a webinar to get your link</p>
-                        )}
-                    </div>
-                    <div className="stat-card"><h3>Total Registrations</h3><h2>{(dashboardStats?.totalUsers || dashboardStats?.total_registrations || 0).toLocaleString()}</h2></div>
-                    <div className="stat-card profile-summary-card" onClick={() => setActiveTab("Settings")} style={{ cursor: 'pointer' }}>
-                        <h3>Client Profile</h3>
-                        <div className="profile-summary-content">
-                            <span className="profile-name-tag">{userName || "Guest Client"}</span>
-                            <span className="profile-org-tag">{clientOrg || "Personal Account"}</span>
+        <div className="plan-section full-pricing">
+            <div className="no-plan-welcome">
+                <h2>Welcome to Enrollify!</h2>
+                <p>Choose a plan to unlock your dashboard features and start growing your webinars.</p>
+            </div>
+            <h2 className="pricing-title">Select a Growth Plan</h2>
+            <div className="pricing-container">
+                {plans.map((plan) => (
+                    <div
+                        key={plan.name}
+                        className={`pricing-card ${plan.featured ? "featured" : ""}`}
+                    >
+                        {plan.featured && <div className="popular-badge">Most Popular</div>}
+                        <div className="plan-header">
+                            <h3>{plan.name}</h3>
+                            <h1>{plan.price}</h1>
+                            <p>per month</p>
                         </div>
-                        <div className="view-profile-link">View Details →</div>
+                        <ul className="plan-features">
+                            {plan.features.map((feature, i) => (
+                                <li key={i}><CheckCircle2 size={16} className="feature-check" /> {feature}</li>
+                            ))}
+                        </ul>
+                        <button className="plan-btn" onClick={() => selectPlan(plan.name)}>
+                            {plan.btnText}
+                        </button>
                     </div>
-                </div>
-            )}
+                ))}
+            </div>
+        </div>
+    );
+};
 
-            <div className={`plan-section ${!selectedPlan ? 'full-pricing' : ''}`}>
-                {!selectedPlan && (
-                    <div className="no-plan-welcome">
-                        <h2>Welcome to Enrollify!</h2>
-                        <p>Choose a plan to unlock your dashboard features and start growing your webinars.</p>
-                    </div>
-                )}
-                <h2 className="pricing-title">{selectedPlan ? "Manage Your Growth Plan " : "Select a Growth Plan "}</h2>
-                <div className="pricing-container">
-                    {plans.map((plan) => (
-                        <div
-                            key={plan.name}
-                            className={`pricing-card ${selectedPlan === plan.name ? "active" : ""} ${plan.featured ? "featured" : ""}`}
-                        >
-                            {plan.featured && <div className="popular-badge">Most Popular</div>}
-                            <div className="plan-header">
-                                <h3>{plan.name}</h3>
-                                <h1>{plan.price}</h1>
-                                <p>per month</p>
-                            </div>
-                            <ul className="plan-features">
-                                {plan.features.map((feature, i) => (
-                                    <li key={i}><CheckCircle2 size={16} className="feature-check" /> {feature}</li>
-                                ))}
-                            </ul>
-                            <button className={`plan-btn ${selectedPlan === plan.name ? 'running' : ''}`} onClick={() => selectPlan(plan.name)}>
-                                {selectedPlan === plan.name ? "Running Plan" : plan.btnText}
-                            </button>
-                        </div>
-                    ))}
+// ===== Active overview — clean, daily-use dashboard for paying users. =====
+const ActiveOverview = ({ userName, clientOrg, selectedPlan, subscriptionData, dashboardStats, webinarStats, audienceList, setActiveTab }) => {
+    const totalRevenue = dashboardStats?.totalRevenue || dashboardStats?.total_revenue || 0;
+    const totalWebinars = dashboardStats?.totalWebinars || dashboardStats?.total_webinars || 0;
+    const totalRegs = dashboardStats?.totalUsers || dashboardStats?.total_registrations || 0;
+    const activeWebinars = (webinarStats || []).filter(w => w.status === "scheduled" || w.status === "live" || w.status === "published").length;
+
+    const validTill = subscriptionData?.subscriptionValidTill ? new Date(subscriptionData.subscriptionValidTill) : null;
+    const daysLeft = validTill ? Math.max(0, Math.ceil((validTill - Date.now()) / (1000 * 60 * 60 * 24))) : null;
+
+    const greeting = (() => {
+        const h = new Date().getHours();
+        if (h < 12) return "Good morning";
+        if (h < 18) return "Good afternoon";
+        return "Good evening";
+    })();
+    const firstName = (userName || "").split(" ")[0] || "there";
+
+    return (
+        <div className="overview-v2">
+            {/* Hero greeting */}
+            <div className="ov-hero">
+                <div>
+                    <p className="ov-greeting">{greeting},</p>
+                    <h2 className="ov-name">{firstName} 👋</h2>
+                    <p className="ov-sub">
+                        Here&apos;s what&apos;s happening across {clientOrg || "your business"} today.
+                    </p>
+                </div>
+                <div className="ov-quick-actions">
+                    <button className="ov-cta ov-cta-primary" onClick={() => setActiveTab("Webinars")}>
+                        <Plus size={16} /> Create webinar
+                    </button>
+                    <button className="ov-cta ov-cta-ghost" onClick={() => setActiveTab("Analytics")}>
+                        <BarChart2 size={16} /> View analytics
+                    </button>
                 </div>
             </div>
-        </>
+
+            {/* Subscription status — visible regardless of expiry, prominent if soon */}
+            {validTill && (
+                <SubscriptionStatusCard
+                    plan={selectedPlan}
+                    validTill={validTill}
+                    daysLeft={daysLeft}
+                    setActiveTab={setActiveTab}
+                />
+            )}
+
+            {/* KPI strip */}
+            <div className="ov-kpi-grid">
+                <KpiCard
+                    label="Total revenue"
+                    value={`₹${totalRevenue.toLocaleString("en-IN")}`}
+                    delta={null}
+                    onClick={() => setActiveTab("Revenue")}
+                />
+                <KpiCard
+                    label="Active webinars"
+                    value={activeWebinars}
+                    sub={`${totalWebinars} total`}
+                    onClick={() => setActiveTab("Webinars")}
+                />
+                <KpiCard
+                    label="Registrations"
+                    value={totalRegs.toLocaleString("en-IN")}
+                    sub={audienceList.length > 0 ? `${audienceList.length} contacts in CRM` : null}
+                    onClick={() => setActiveTab("Audience")}
+                />
+                <KpiCard
+                    label="Avg. revenue / webinar"
+                    value={totalWebinars > 0 ? `₹${Math.round(totalRevenue / totalWebinars).toLocaleString("en-IN")}` : "—"}
+                    onClick={() => setActiveTab("Analytics")}
+                />
+            </div>
+
+            <div className="ov-two-col">
+                {/* Top webinars */}
+                <div className="ov-card">
+                    <div className="ov-card-head">
+                        <h3>Top performing webinars</h3>
+                        <button className="ov-link" onClick={() => setActiveTab("Webinars")}>View all →</button>
+                    </div>
+                    {(webinarStats || []).length === 0 ? (
+                        <div className="ov-empty">
+                            <Activity size={20} />
+                            <p>No webinars yet.</p>
+                            <button className="ov-link" onClick={() => setActiveTab("Webinars")}>
+                                Create your first webinar →
+                            </button>
+                        </div>
+                    ) : (
+                        <ul className="ov-list">
+                            {[...webinarStats]
+                                .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
+                                .slice(0, 4)
+                                .map((w, i) => (
+                                    <li key={w.webinarId || w.id || i}>
+                                        <div className="ov-list-info">
+                                            <span className="ov-list-title">{w.title || w.name || "Untitled"}</span>
+                                            <span className="ov-list-sub">
+                                                {w.enrollments || 0} enrolled · ₹{(w.revenue || 0).toLocaleString("en-IN")}
+                                            </span>
+                                        </div>
+                                        <span className="ov-list-meta">#{i + 1}</span>
+                                    </li>
+                                ))}
+                        </ul>
+                    )}
+                </div>
+
+                {/* Quick share / first webinar link */}
+                <div className="ov-card">
+                    <div className="ov-card-head">
+                        <h3>Share your enrollment link</h3>
+                    </div>
+                    {webinarStats.length > 0 && webinarStats[0]?.slug ? (
+                        <>
+                            <div className="ov-link-box">
+                                <code>{window.location.origin}/w/{webinarStats[0].slug}</code>
+                                <button
+                                    className="ov-copy-btn"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`${window.location.origin}/w/${webinarStats[0].slug}`);
+                                    }}
+                                >
+                                    <Copy size={14} /> Copy
+                                </button>
+                            </div>
+                            <p className="ov-card-hint">
+                                Paste this in WhatsApp, email, or social bios. Enrollments arrive in your Audience tab.
+                            </p>
+                        </>
+                    ) : (
+                        <div className="ov-empty">
+                            <Link2 size={20} />
+                            <p>Create a webinar to get your share link.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ===== Subscription status card — primary CTA when expiring soon =====
+const SubscriptionStatusCard = ({ plan, validTill, daysLeft, setActiveTab }) => {
+    const status = daysLeft <= 0 ? "expired" : daysLeft <= 3 ? "critical" : daysLeft <= 7 ? "soon" : "ok";
+    const formatted = validTill.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+    const copy = {
+        expired: { tag: "Expired", msg: `Your ${plan} plan expired on ${formatted}. Renew now to keep publishing webinars.` },
+        critical: { tag: `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`, msg: `Your ${plan} plan renews on ${formatted}. Renew now to avoid interruption.` },
+        soon: { tag: `${daysLeft} days left`, msg: `Your ${plan} plan renews on ${formatted}. Set up renewal in advance.` },
+        ok: { tag: `${daysLeft} days left`, msg: `Your ${plan} plan renews on ${formatted}.` },
+    }[status];
+
+    return (
+        <div className={`ov-sub-card ov-sub-${status}`}>
+            <div className="ov-sub-icon">
+                {status === "expired" || status === "critical"
+                    ? <AlertCircle size={22} />
+                    : <ShieldCheck size={22} />}
+            </div>
+            <div className="ov-sub-body">
+                <p className="ov-sub-tag">{copy.tag}</p>
+                <p className="ov-sub-msg">{copy.msg}</p>
+            </div>
+            <button className="ov-sub-btn" onClick={() => setActiveTab("Billing")}>
+                {status === "expired" ? "Renew now" : status === "ok" ? "Manage plan" : "Renew now"} →
+            </button>
+        </div>
+    );
+};
+
+// ===== Reusable KPI card =====
+const KpiCard = ({ label, value, sub, onClick }) => (
+    <button type="button" className="ov-kpi" onClick={onClick}>
+        <span className="ov-kpi-label">{label}</span>
+        <span className="ov-kpi-value">{value}</span>
+        {sub && <span className="ov-kpi-sub">{sub}</span>}
+    </button>
+);
+
+// ===== Global renewal banner — shown above topbar when expiring/expired.
+// Dismissible via sessionStorage so it doesn't nag during a single session
+// after the user clicks Renew (we only hide for that tab/session). =====
+const RenewalBanner = ({ status, onRenew }) => {
+    const [dismissed, setDismissed] = React.useState(() => {
+        try { return sessionStorage.getItem("renewal_banner_dismissed") === "1"; }
+        catch { return false; }
+    });
+
+    if (!status || !status.hasPlan || dismissed) return null;
+    const { isExpired, isExpiringSoon, daysLeft, plan } = status;
+    if (!isExpired && !isExpiringSoon) return null;
+
+    const tone = isExpired ? "expired" : daysLeft <= 3 ? "critical" : "soon";
+    const headline = isExpired
+        ? `Your ${plan || "subscription"} expired ${daysLeft === 0 ? "today" : `${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? "" : "s"} ago`}`
+        : `Renew your ${plan || "subscription"} — ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
+
+    const dismiss = () => {
+        try { sessionStorage.setItem("renewal_banner_dismissed", "1"); } catch {}
+        setDismissed(true);
+    };
+
+    return (
+        <div className={`renewal-banner renewal-banner-${tone}`} role="status">
+            <div className="renewal-banner-icon">
+                <AlertCircle size={18} />
+            </div>
+            <p className="renewal-banner-msg">
+                <strong>{headline}.</strong>{" "}
+                {isExpired
+                    ? "Renew now to restore publishing and accept new enrollments."
+                    : "Renew in advance — never miss a webinar to a lapsed plan."}
+            </p>
+            <button className="renewal-banner-cta" onClick={onRenew}>
+                Renew now
+            </button>
+            <button className="renewal-banner-close" onClick={dismiss} aria-label="Dismiss">
+                <X size={16} />
+            </button>
+        </div>
     );
 };
 
@@ -547,6 +849,16 @@ const WebinarsSection = ({ webinarSearch, setWebinarSearch, webinarFilter, setWe
                                 <button className="action-btn" onClick={() => navigate("/create-webinar", { state: { webinarToEdit: webinar } })}>
                                     <Edit2 size={16} />
                                 </button>
+                                <button
+                                  className="action-btn"
+                                  title="Export registrations as CSV"
+                                  onClick={async () => {
+                                    try { await downloadWebinarRegistrationsCsv(webinar.id || webinar._id); }
+                                    catch (e) { alert(e.message || "Export failed"); }
+                                  }}
+                                >
+                                  <Download size={16} />
+                                </button>
                                 <button className="action-btn" onClick={() => setActiveTab("Analytics")}><BarChart2 size={16} /></button>
                             </div>
                         </div>
@@ -603,7 +915,15 @@ const AudienceSection = ({ searchQuery, setSearchQuery, selectedWebinar, setSele
                         </select>
                     </div>
                 </div>
-                <button className="export-btn"><Download size={18} /> Download CSV / Excel</button>
+                <button
+                  className="export-btn"
+                  onClick={async () => {
+                    try { await downloadAudienceCsv(); }
+                    catch (e) { alert(e.message || "Export failed"); }
+                  }}
+                >
+                  <Download size={18} /> Download CSV
+                </button>
             </div>
 
             <div className="crm-table-container">
@@ -1272,6 +1592,20 @@ const DashBoard = () => {
     // Platform banner from admin
     const [platformBanner, setPlatformBanner] = useState("");
 
+    // Subscription status — drives the renewal banner shown above the topbar.
+    // Refreshed on dashboard mount; light enough that we don't poll.
+    const [subStatus, setSubStatus] = useState(null);
+    React.useEffect(() => {
+        const t = localStorage.getItem("token");
+        if (!t) return;
+        fetch(`${API_BASE}/api/client/subscription-status`, {
+            headers: { Authorization: `Bearer ${t}` },
+        })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => d && setSubStatus(d))
+            .catch(() => {});
+    }, []);
+
     // DashBoard stats state
     const [dashboardStats, setDashboardStats] = useState({
         totalWebinars: 0, totalUsers: 0, totalRevenue: 0, activeWebinars: 0
@@ -1721,22 +2055,25 @@ const DashBoard = () => {
         return matchesSearch && matchesWebinar;
     });
 
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("loggedInUser");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userData");
+        localStorage.removeItem("currentWebinarId");
+        localStorage.removeItem("webinarData");
+        localStorage.removeItem("subscriptionId");
+        localStorage.removeItem("activePlan");
+        sessionStorage.clear();
+        window.location.href = "/signin";
+    };
+
     return (
         <div className="dashboard-wrapper">
-            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} selectedPlan={selectedPlan} onLogout={() => {
-                localStorage.removeItem("token");
-                localStorage.removeItem("loggedInUser");
-                localStorage.removeItem("userName");
-                localStorage.removeItem("userData");
-                localStorage.removeItem("currentWebinarId");
-                localStorage.removeItem("webinarData");
-                localStorage.removeItem("subscriptionId");
-                localStorage.removeItem("activePlan");
-                sessionStorage.clear();
-                window.location.href = "/signin";
-            }} />
+            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} selectedPlan={selectedPlan} />
 
             <div className="main-content">
+                <RenewalBanner status={subStatus} onRenew={() => setActiveTab("Billing")} />
                 {platformBanner && (
                     <div style={{ padding: "12px 20px", background: "linear-gradient(135deg, #6574e9, #4f5cd4)", color: "#fff", borderRadius: "10px", margin: "0 0 16px 0", fontSize: "0.88rem", fontWeight: "500", display: "flex", alignItems: "center", gap: "8px" }}>
                         <Bell size={16} /> {platformBanner}
@@ -1746,7 +2083,9 @@ const DashBoard = () => {
                     activeTab={activeTab}
                     profilePic={profilePic}
                     userName={userName}
-                    onProfileClick={() => setActiveTab("Settings")}
+                    userEmail={clientEmail || (JSON.parse(localStorage.getItem("userData") || "{}").email) || ""}
+                    setActiveTab={setActiveTab}
+                    onLogout={handleLogout}
                 />
 
                 {activeTab === "Overview" && (
@@ -1811,6 +2150,16 @@ const DashBoard = () => {
                 {activeTab === "Revenue" && (
                     <ErrorBoundary>
                         <RevenueSection dashboardStats={dashboardStats} setActiveTab={setActiveTab} audienceList={audienceList} subscriptionData={subscriptionData} />
+                    </ErrorBoundary>
+                )}
+                {activeTab === "Referrals" && (
+                    <ErrorBoundary>
+                        <ReferralPanel />
+                    </ErrorBoundary>
+                )}
+                {activeTab === "Invoices" && (
+                    <ErrorBoundary>
+                        <InvoicesPanel />
                     </ErrorBoundary>
                 )}
                 {activeTab === "Billing" && (

@@ -1,0 +1,158 @@
+.inv-panel {
+  padding: 28px;
+  max-width: 980px;
+}
+
+.inv-header h2 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  color: #1a1f3a;
+}
+
+.inv-sub {
+  color: #6b7280;
+  margin: 0 0 24px;
+  font-size: 0.95rem;
+}
+
+.inv-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+}
+
+.inv-empty {
+  background: #fff;
+  border: 1px dashed #e5e7eb;
+  border-radius: 14px;
+  padding: 56px 20px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.inv-empty p {
+  margin: 0 0 6px;
+}
+
+.inv-empty-hint {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+/* Skeleton rows shown during initial fetch — prevents the user from
+   seeing an empty "no invoices" state while data is still loading. */
+.inv-skeleton {
+  background: linear-gradient(110deg, #ececf2 8%, #f5f5fa 18%, #ececf2 33%);
+  background-size: 200% 100%;
+  animation: inv-shimmer 1.4s linear infinite;
+  border-radius: 6px;
+  display: inline-block;
+  height: 0.9em;
+  width: 80%;
+  vertical-align: middle;
+}
+
+.inv-skeleton-pill {
+  height: 28px;
+  width: 110px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+@keyframes inv-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.inv-table-wrap {
+  background: #fff;
+  border: 1px solid #eef0f6;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inv-table thead th {
+  text-align: left;
+  padding: 14px 18px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  background: #f9fafb;
+  border-bottom: 1px solid #eef0f6;
+}
+
+.inv-table tbody td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.92rem;
+  color: #1a1f3a;
+}
+
+.inv-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.inv-num {
+  font-family: "Menlo", "Consolas", monospace;
+  font-size: 0.85rem;
+  color: #4f46e5;
+}
+
+.inv-amt {
+  text-align: right;
+  font-weight: 600;
+}
+
+.inv-action {
+  text-align: right;
+}
+
+.inv-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.inv-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.inv-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .inv-table thead {
+    display: none;
+  }
+  .inv-table tbody td {
+    display: block;
+    padding: 10px 18px;
+  }
+  .inv-table tbody tr {
+    display: block;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .inv-amt,
+  .inv-action {
+    text-align: left;
+  }
+}

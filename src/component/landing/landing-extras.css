@@ -1,0 +1,594 @@
+/* =================================================================
+   ENROLLIFY LANDING — extras layer
+   Honest storytelling sections. No fake earnings, no fake names.
+   ================================================================= */
+
+:root {
+  --bg-cream: #fbfaf6;
+  --ink-deep: #0f1535;
+  --ink-mid: #2b2f4d;
+  --ink-soft: #6b7280;
+  --indigo: #6366f1;
+  --indigo-deep: #4f46e5;
+  --violet: #8b5cf6;
+  --coral: #f97365;
+  --amber: #f59e0b;
+  --green: #22c55e;
+}
+
+/* =================================================================
+   1) TRUST STRIP — verifiable product capabilities only
+   ================================================================= */
+.trust-strip {
+  position: relative;
+  padding: 28px clamp(1rem, 4vw, 3rem);
+  background:
+    radial-gradient(1200px 200px at 50% 0%, rgba(99, 102, 241, 0.08), transparent 70%),
+    linear-gradient(180deg, #ffffff 0%, #fafafe 100%);
+  border-top: 1px solid #eef0f6;
+  border-bottom: 1px solid #eef0f6;
+}
+
+.trust-strip-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.trust-pill {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #eef0f6;
+  border-radius: 16px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trust-pill:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 16px 36px -20px rgba(15, 23, 42, 0.12);
+}
+
+.trust-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trust-indigo .trust-icon { background: rgba(99, 102, 241, 0.12); color: var(--indigo-deep); }
+.trust-green .trust-icon { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+.trust-violet .trust-icon { background: rgba(139, 92, 246, 0.14); color: #6d28d9; }
+.trust-coral .trust-icon { background: rgba(249, 115, 101, 0.14); color: #c2410c; }
+
+.trust-text { min-width: 0; }
+.trust-title {
+  margin: 0 0 4px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink-deep);
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  letter-spacing: -0.01em;
+}
+.trust-sub {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 1000px) {
+  .trust-strip-inner { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .trust-strip-inner { grid-template-columns: 1fr; }
+}
+
+/* =================================================================
+   2) CREATOR JOURNEY — alternating storytelling cards
+   ================================================================= */
+.journey3 {
+  padding: clamp(60px, 8vw, 110px) clamp(1rem, 4vw, 3rem);
+  position: relative;
+  background: linear-gradient(180deg, #fafafe 0%, #ffffff 100%);
+}
+
+.sec-eyebrow {
+  display: inline-block;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--indigo-deep);
+  margin-bottom: 14px;
+}
+
+.sec-sub {
+  margin-top: 10px;
+  color: var(--ink-mid);
+}
+
+.journey-list {
+  list-style: none;
+  padding: 0;
+  margin: 56px auto 0;
+  max-width: 1180px;
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+  position: relative;
+}
+
+.journey-list::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.18), transparent);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.journey-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+  position: relative;
+}
+
+.journey-item.j-right .journey-text { order: 2; }
+.journey-item.j-right .journey-visual { order: 1; }
+
+.journey-text { padding: 0 8px; }
+
+.journey-step-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.journey-num {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--indigo) 0%, var(--violet) 100%);
+  padding: 5px 11px;
+  border-radius: 9999px;
+  letter-spacing: 0.06em;
+}
+
+.journey-label {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.journey-title {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink-deep);
+  margin: 0 0 14px;
+  line-height: 1.15;
+}
+
+.journey-body {
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--ink-mid);
+  margin: 0;
+}
+
+.journey-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ====== Synthetic mocks shared base ====== */
+.mock {
+  width: 100%;
+  max-width: 360px;
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid #eef0f6;
+  box-shadow:
+    0 32px 60px -28px rgba(15, 23, 42, 0.18),
+    0 12px 24px -12px rgba(99, 102, 241, 0.10);
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mock-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.mock-bar span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e5e7eb;
+}
+.mock-bar span:nth-child(1) { background: #f97365; }
+.mock-bar span:nth-child(2) { background: #f59e0b; }
+.mock-bar span:nth-child(3) { background: #22c55e; }
+
+.mock-body { display: flex; flex-direction: column; gap: 10px; }
+
+.mock-input {
+  display: flex;
+  flex-direction: column;
+  background: #fafafe;
+  border: 1px solid #eef0f6;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.mock-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Skeleton lines stand in for real values — explicitly placeholder so
+   visitors read them as "your data goes here" instead of fake numbers. */
+.mock-skeleton-line {
+  display: inline-block;
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 50%, #e5e7eb 100%);
+  background-size: 200% 100%;
+  animation: mock-shimmer 2.2s linear infinite;
+}
+@keyframes mock-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.mock-btn {
+  margin-top: 4px;
+  background: linear-gradient(135deg, var(--indigo), var(--violet));
+  color: #fff;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: default;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+}
+
+/* ====== Share mock ====== */
+.mock-share { padding-top: 26px; }
+.mock-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fafafe;
+  border: 1px solid #eef0f6;
+  border-radius: 12px;
+  padding: 10px 12px;
+  position: relative;
+}
+.mock-link-row code {
+  flex: 1;
+  font-family: "Menlo", "Consolas", monospace;
+  font-size: 0.82rem;
+  color: var(--ink-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mock-link-slug {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.mock-link-copy {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--indigo-deep);
+  padding: 3px 9px;
+  border-radius: 9999px;
+}
+
+.mock-channels { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.mock-chan {
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  border: 1px solid #eef0f6;
+  color: var(--ink-mid);
+}
+.mock-chan.whatsapp { background: rgba(37, 211, 102, 0.10); color: #15803d; border-color: rgba(37, 211, 102, 0.25); }
+.mock-chan.instagram { background: rgba(225, 48, 108, 0.08); color: #be185d; border-color: rgba(225, 48, 108, 0.20); }
+
+.mock-arrival {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #15803d;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.mock-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+}
+
+/* ====== Payment mock ====== */
+.mock-payment { background: linear-gradient(180deg, #ffffff 0%, #fafafe 100%); }
+.mock-pay-card {
+  background: linear-gradient(135deg, var(--indigo) 0%, var(--violet) 100%);
+  color: #fff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 18px 40px -20px rgba(99, 102, 241, 0.5);
+}
+.mock-pay-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  gap: 12px;
+}
+.mock-pay-row strong {
+  font-size: 1rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 4px 10px;
+  border-radius: 8px;
+  letter-spacing: 0.01em;
+}
+.mock-pay-row-sub {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+.mock-pay-status {
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+.mock-pay-bal {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 4px 0;
+}
+.mock-pay-label {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.mock-pay-balance-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink-deep);
+}
+
+/* ====== Growth mock ====== */
+.mock-growth-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.mock-growth-label {
+  display: block;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.mock-growth-illustrative {
+  display: block;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.mock-growth-arrow {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--indigo);
+}
+.mock-growth-chart {
+  width: 100%;
+  height: 110px;
+  display: block;
+}
+
+@media (max-width: 800px) {
+  .journey-list::before { display: none; }
+  .journey-item, .journey-item.j-right {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .journey-item.j-right .journey-text { order: 0; }
+  .journey-item.j-right .journey-visual { order: 1; }
+}
+
+/* =================================================================
+   2.5) WORKFLOW ILLUSTRATIONS — SVG mockups for the "4 simple steps"
+   Replaces the random PNGs (webinar/card/social/graph) with brand-
+   matched mockups. Sit inside the existing .wf-img-wrap container.
+   ================================================================= */
+
+.wf-illu-wrap {
+  background: transparent !important;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.wf-illu {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 18px 30px rgba(15, 23, 42, 0.08));
+}
+
+/* On the dark "wf-accent" step (the one with indigo background) the
+   SVG cards already have white fills, so we just soften the shadow
+   so it doesn't double-up against the dark backdrop. */
+.wf-accent .wf-illu-wrap .wf-illu {
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.18));
+}
+
+/* =================================================================
+   3) BUILT FOR YOU — persona cards (replaces fake testimonials)
+   ================================================================= */
+.builtfor3 {
+  padding: clamp(60px, 8vw, 110px) clamp(1rem, 4vw, 3rem);
+  background:
+    radial-gradient(800px 400px at 80% 10%, rgba(249, 115, 101, 0.06), transparent 70%),
+    radial-gradient(800px 400px at 20% 90%, rgba(99, 102, 241, 0.06), transparent 70%),
+    #ffffff;
+}
+
+.builtfor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 1180px;
+  margin: 48px auto 0;
+}
+
+.builtfor-card {
+  background: #ffffff;
+  border: 1px solid #eef0f6;
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.builtfor-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--indigo), var(--violet));
+}
+.builtfor-coral::before { background: linear-gradient(90deg, var(--coral), var(--amber)); }
+.builtfor-violet::before { background: linear-gradient(90deg, var(--violet), var(--indigo)); }
+
+.builtfor-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 22px 50px -28px rgba(15, 23, 42, 0.15);
+}
+
+.builtfor-icon {
+  font-size: 1.8rem;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.08);
+  margin-bottom: 4px;
+}
+.builtfor-coral .builtfor-icon { background: rgba(249, 115, 101, 0.10); }
+.builtfor-violet .builtfor-icon { background: rgba(139, 92, 246, 0.10); }
+
+.builtfor-title {
+  margin: 0;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-deep);
+}
+.builtfor-body {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink-mid);
+}
+
+.builtfor-foot {
+  max-width: 1180px;
+  margin: 40px auto 0;
+  background: linear-gradient(135deg, #0f1535 0%, #1f2452 100%);
+  color: #fff;
+  border-radius: 18px;
+  padding: 20px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.builtfor-foot-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+.builtfor-foot-cta {
+  background: linear-gradient(135deg, var(--coral) 0%, var(--amber) 100%);
+  color: #fff;
+  border: none;
+  padding: 11px 22px;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+.builtfor-foot-cta:hover { transform: translateY(-1px); }
+
+@media (max-width: 900px) {
+  .builtfor-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .builtfor-grid { grid-template-columns: 1fr; }
+  .builtfor-foot { flex-direction: column; align-items: flex-start; }
+  .builtfor-foot-cta { align-self: stretch; text-align: center; }
+}

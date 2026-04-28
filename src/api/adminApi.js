@@ -104,3 +104,53 @@ export const updateSubscriptionPlan = async (planId, planData, token) => {
   if (!response.ok) throw new Error("Failed to update subscription plan");
   return await response.json();
 };
+
+// ===== COUPONS =====
+export const fetchCoupons = async (token) => {
+  const res = await fetch(`${API_BASE}/api/coupons`, {
+    headers: getAdminHeaders(token),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to fetch coupons");
+  }
+  return res.json();
+};
+
+export const createCouponAPI = async (data, token) => {
+  const res = await fetch(`${API_BASE}/api/coupons`, {
+    method: "POST",
+    headers: getAdminHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to create coupon");
+  }
+  return res.json();
+};
+
+export const updateCouponAPI = async (id, data, token) => {
+  const res = await fetch(`${API_BASE}/api/coupons/${id}`, {
+    method: "PUT",
+    headers: getAdminHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to update coupon");
+  }
+  return res.json();
+};
+
+export const deleteCouponAPI = async (id, token) => {
+  const res = await fetch(`${API_BASE}/api/coupons/${id}`, {
+    method: "DELETE",
+    headers: getAdminHeaders(token),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to delete coupon");
+  }
+  return res.json();
+};

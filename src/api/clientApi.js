@@ -139,3 +139,51 @@ export const getClientSubscriptionAPI = async () => {
   });
   return handleResponse(response);
 };
+
+// Trigger CSV download for a single webinar's registrations.
+// Points at the streaming /api/export endpoint which includes UTM fields,
+// custom-form responses, and CSV-injection-safe escaping.
+export const downloadWebinarRegistrationsCsv = async (webinarId) => {
+  const token = getAuthToken();
+  if (!token) throw new Error("Missing authentication token.");
+  const res = await fetch(`${API_BASE}/api/export/registrations/${webinarId}.csv`, {
+    method: "GET",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Export failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `registrations_${webinarId}_${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+// Trigger CSV download for unified audience
+export const downloadAudienceCsv = async () => {
+  const token = getAuthToken();
+  if (!token) throw new Error("Missing authentication token.");
+  const res = await fetch(`${API_BASE}/api/clientprofile/audience/export`, {
+    method: "GET",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Export failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `audience_${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+};

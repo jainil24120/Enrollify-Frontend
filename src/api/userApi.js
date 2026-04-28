@@ -33,3 +33,20 @@ export const verifyPaymentAPI = async (verificationData) => {
 
   return await response.json();
 };
+
+// Validate a coupon for a webinar before checkout. Returns:
+// { valid: bool, discountAmount, finalPrice, message }
+export const validateCouponAPI = async ({ code, webinarId }) => {
+  const response = await fetch(`${API_BASE}/api/coupons/validate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, webinarId }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    return { valid: false, message: errorData.message || `Coupon check failed (${response.status})` };
+  }
+
+  return await response.json();
+};

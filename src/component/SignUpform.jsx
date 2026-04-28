@@ -94,6 +94,23 @@ function SignUpform() {
     setIsLoading(true);
 
     try {
+      // Capture ?ref=CODE from the URL or sessionStorage so the signup
+      // gets credited to the referrer. We persist to sessionStorage on first
+      // visit so the code survives the user navigating between Login/Signup
+      // tabs before submitting.
+      let referralCode = "";
+      try {
+        const urlRef = new URLSearchParams(window.location.search).get("ref");
+        if (urlRef) {
+          referralCode = urlRef.toUpperCase();
+          sessionStorage.setItem("enrollify_ref", referralCode);
+        } else {
+          referralCode = sessionStorage.getItem("enrollify_ref") || "";
+        }
+      } catch (e) {
+        // sessionStorage unavailable — proceed without referral tracking.
+      }
+
       const response = await fetch(`${API_BASE}/users/registers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,7 +122,8 @@ function SignUpform() {
           phone: data.phone,
           email: data.email,
           password: data.password,
-          confirmPassword: data.confirmPassword
+          confirmPassword: data.confirmPassword,
+          referralCode: referralCode || undefined,
         }),
       });
 

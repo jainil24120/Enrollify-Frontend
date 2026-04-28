@@ -193,6 +193,22 @@
   margin-top: 12px;
 }
 
+/* Skeleton placeholder shown while puppeteer boots and QR has not arrived. */
+.wa-qr-skeleton {
+  width: 256px;
+  height: 256px;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: linear-gradient(110deg, #ececf2 8%, #f5f5fa 18%, #ececf2 33%);
+  background-size: 200% 100%;
+  animation: wa-shimmer 1.4s linear infinite;
+}
+
+@keyframes wa-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
 /* ===== Form Groups ===== */
 .wa-form-group {
   margin-bottom: 16px;
