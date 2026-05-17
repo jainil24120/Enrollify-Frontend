@@ -21,6 +21,7 @@ function AdminLogin() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -44,6 +45,7 @@ function AdminLogin() {
   const handleChange = (e) => {
     setData({ ...data, [e.target.name]: e.target.value });
     setErrorMsg("");
+    setSuccessMsg("");
   };
 
   const handleOtpChange = (e, index) => {
@@ -138,6 +140,7 @@ function AdminLogin() {
 
       if (response.ok) {
         setOtpStep(true);
+        setSuccessMsg(`Security code sent to ${data.email}.`);
       } else {
         const errorData = await response.json().catch(() => ({}));
         setErrorMsg(errorData.message || "Failed to send OTP.");
@@ -187,15 +190,20 @@ function AdminLogin() {
       if (response.ok && verifyRes.ok) {
         setForgot(false);
         setOtpStep(false);
+        setData((prev) => ({ ...prev, password: "", otp: ["", "", "", "", "", ""], newPassword: "", confirmNewPassword: "" }));
+        setSuccessMsg("Password reset successfully. Sign in with your new password.");
         setIsLoading(false);
         return;
       }
+
+      const errorData = await response.json().catch(() => ({}));
+      setIsLoading(false);
+      setErrorMsg(errorData.message || "Failed to update password. Invalid OTP.");
+      return;
     } catch (error) {
-      console.error("Reset Password Error:", error);
+      setIsLoading(false);
+      setErrorMsg("Unable to connect to server. Please try again.");
     }
-    
-    setIsLoading(false);
-    setErrorMsg("Failed to update password. Invalid OTP.");
   };
 
   return (
@@ -214,6 +222,12 @@ function AdminLogin() {
             </div>
         )}
 
+        {successMsg && (
+            <div style={{ color: "#16a34a", background: "rgba(22, 163, 74, 0.06)", border: "1px solid rgba(22, 163, 74, 0.18)", padding: "10px", borderRadius: "8px", marginBottom: "15px", fontSize: "13px", fontWeight: "600" }}>
+              {successMsg}
+            </div>
+        )}
+
         {/* SIGN IN */}
         {!forgot && (
           <>
@@ -224,7 +238,7 @@ function AdminLogin() {
             </button>
 
             <div className="admin-links">
-              <span onClick={() => { setForgot(true); setErrorMsg(""); }}>Forgot Password?</span>
+              <span onClick={() => { setForgot(true); setErrorMsg(""); setSuccessMsg(""); }}>Forgot Password?</span>
             </div>
           </>
         )}

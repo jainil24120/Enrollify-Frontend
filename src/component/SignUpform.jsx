@@ -27,6 +27,7 @@ function SignUpform() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -52,6 +53,7 @@ function SignUpform() {
   const handleChange = (e) => {
     setData({ ...data, [e.target.name]: e.target.value });
     setErrorMsg("");
+    setSuccessMsg("");
   };
 
   const handleOtpChange = (e, index) => {
@@ -213,6 +215,7 @@ function SignUpform() {
 
       if (response.ok) {
         setOtpStep(true);
+        setSuccessMsg(`We've sent a 6-digit reset code to ${data.email}.`);
         setIsLoading(false);
         return;
       } else {
@@ -221,6 +224,7 @@ function SignUpform() {
         setIsLoading(false);
       }
     } catch (error) {
+      setErrorMsg("Unable to connect to server. Please try again.");
       setIsLoading(false);
     }
   };
@@ -239,6 +243,7 @@ function SignUpform() {
 
       if (response.ok) {
         setErrorMsg("");
+        setSuccessMsg(`A new code has been sent to ${data.email}.`);
         setResendCooldown(60);
         const timer = setInterval(() => {
           setResendCooldown((prev) => {
@@ -295,6 +300,8 @@ function SignUpform() {
       if (response.ok && verifyRes.ok) {
         setForgot(false);
         setOtpStep(false);
+        setData((prev) => ({ ...prev, password: "", otp: ["", "", "", "", "", ""], newPassword: "", confirmNewPassword: "" }));
+        setSuccessMsg("Password reset successfully. Please sign in with your new password.");
         setIsLoading(false);
         return;
       } else {
@@ -303,6 +310,7 @@ function SignUpform() {
         setIsLoading(false);
       }
     } catch (error) {
+      setErrorMsg("Unable to connect to server. Please try again.");
       setIsLoading(false);
     }
   };
@@ -345,8 +353,13 @@ function SignUpform() {
           <h2>{getHeading()}</h2>
           <p className="auth-subtitle">{getSubtitle()}</p>
 
-          {/* Error */}
+          {/* Error / Success */}
           {errorMsg && <div className="auth-error">{errorMsg}</div>}
+          {successMsg && (
+            <div className="auth-error" style={{ color: "#16a34a", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.18)" }}>
+              {successMsg}
+            </div>
+          )}
 
           {/* SIGN IN */}
           {!isSignup && !forgot && (
@@ -377,8 +390,8 @@ function SignUpform() {
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </button>
               <div className="auth-links">
-                <span onClick={() => { setIsSignup(true); setErrorMsg(""); }}>Create Account</span>
-                <span onClick={() => { setForgot(true); setErrorMsg(""); }}>Forgot Password?</span>
+                <span onClick={() => { setIsSignup(true); setErrorMsg(""); setSuccessMsg(""); }}>Create Account</span>
+                <span onClick={() => { setForgot(true); setErrorMsg(""); setSuccessMsg(""); }}>Forgot Password?</span>
               </div>
             </>
           )}
