@@ -140,7 +140,7 @@ function TemplateBold({ data, onRegister }) {
             <div className="tb-detail-card-label">Joining Fee</div>
             <div className="tb-detail-card-value">
               {isFree ? "FREE" : `\u20B9${price}/-`}
-              {originalPrice > price && <span className="tb-orig-price">\u20B9{originalPrice}</span>}
+              {originalPrice > price && <span className="tb-orig-price">{`\u20B9${originalPrice}`}</span>}
             </div>
           </div>
           <div className="tb-detail-card">
@@ -302,7 +302,7 @@ function TemplateBold({ data, onRegister }) {
       {/* Final CTA */}
       <div className="tb-final-cta">
         <h2 className="tb-final-title">{isFree ? "Don't Miss This FREE Session!" : `Enroll Now for Just \u20B9${price}/-`}</h2>
-        {originalPrice > price && <p className="tb-final-price-note">Regular Price: <span style={{ textDecoration: "line-through" }}>\u20B9{originalPrice}</span></p>}
+        {originalPrice > price && <p className="tb-final-price-note">Regular Price: <span style={{ textDecoration: "line-through" }}>{`\u20B9${originalPrice}`}</span></p>}
         <button className="tb-final-btn" onClick={onRegister}>{ctaLabel}</button>
       </div>
 

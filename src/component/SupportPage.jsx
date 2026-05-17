@@ -25,6 +25,7 @@ function SupportPage({ isAdmin = false }) {
   const [showForm, setShowForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -46,11 +47,14 @@ function SupportPage({ isAdmin = false }) {
 
   const loadTickets = async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const data = isAdmin ? await getAllTicketsAPI() : await getMyTicketsAPI();
       setTickets(Array.isArray(data) ? data : data?.data || []);
     } catch (e) {
+      // Surface the real reason instead of a misleading "no tickets" state.
       setTickets([]);
+      setLoadError(e?.message || "Could not load tickets. Please try again.");
     }
     setLoading(false);
   };
@@ -156,6 +160,14 @@ function SupportPage({ isAdmin = false }) {
       {/* Tickets List */}
       {loading ? (
         <div className="sp-loading">Loading tickets...</div>
+      ) : loadError ? (
+        <div className="sp-empty">
+          <div className="sp-empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <p>{loadError}</p>
+          <button className="sp-btn sp-btn-primary" style={{ marginTop: 12 }} onClick={loadTickets}>Retry</button>
+        </div>
       ) : tickets.length === 0 ? (
         <div className="sp-empty">
           <div className="sp-empty-icon">

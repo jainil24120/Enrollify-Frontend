@@ -1489,17 +1489,27 @@ const SettingsSection = ({ activeSettingTab, setActiveSettingTab, isSavingSettin
 
 
 const StudentDrawer = ({ drawerStudent, setDrawerStudent }) => drawerStudent && (
-    <div className="config-drawer-overlay show" onClick={() => setDrawerStudent(null)}>
-        <div className="config-drawer-content audience-drawer" onClick={e => e.stopPropagation()}>
-            <button className="close-drawer-btn" onClick={() => setDrawerStudent(null)}><X size={20} /></button>
-            <div className="audience-hero-header" style={{ background: `linear-gradient(135deg, ${drawerStudent.avatarColor}, #e5e7eb)` }}>
-                <div className="hero-avatar-large">{drawerStudent.name.charAt(0)}</div>
-                <div className="hero-info-text"><h2>{drawerStudent.name}</h2><p>{drawerStudent.email} • Joined {drawerStudent.joinedDate}</p></div>
+    <div className="audience-drawer-overlay" onClick={() => setDrawerStudent(null)}>
+        <div className="audience-drawer" onClick={e => e.stopPropagation()}>
+            <div className="audience-hero-header" style={{ background: `linear-gradient(135deg, ${drawerStudent.avatarColor || "#6574e9"}, #6574e9)` }}>
+                <button className="drawer-close" onClick={() => setDrawerStudent(null)}><X size={18} /></button>
+                <div className="drawer-avatar">{drawerStudent.name.charAt(0)}</div>
+                <span className="drawer-name">{drawerStudent.name}</span>
+                <span className="drawer-email">{drawerStudent.email} • Joined {drawerStudent.joinedDate}</span>
             </div>
-            <div className="drawer-scroll-body">
-                <div className="audience-stat-grid">
-                    <div className="a-stat-box"><h4>Revenue</h4><span className="mono-space">{drawerStudent.totalSpent}</span></div>
-                    <div className="a-stat-box"><h4>Events</h4><span>{drawerStudent.webinarsAttended}</span></div>
+            <div className="drawer-body">
+                <div className="drawer-section">
+                    <h4>Overview</h4>
+                    <div className="drawer-detail-grid">
+                        <div className="drawer-detail-item">
+                            <span>Revenue</span>
+                            <span className="mono-space">{drawerStudent.totalSpent}</span>
+                        </div>
+                        <div className="drawer-detail-item">
+                            <span>Events</span>
+                            <span>{drawerStudent.webinarsAttended}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

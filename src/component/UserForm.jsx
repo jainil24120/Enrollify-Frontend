@@ -67,6 +67,9 @@ function UserForm() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  // When logged in we pre-fill from the account, but the attendee may want to
+  // register with a different name/email. editDetails reveals editable fields.
+  const [editDetails, setEditDetails] = useState(false);
 
   const webinarData = JSON.parse(localStorage.getItem("webinarData")) || {};
   const price = webinarData.price || "0";
@@ -164,8 +167,8 @@ function UserForm() {
     const expiryRegex = /^(0[1-9]|1[0-2])\/?([0-9]{2})$/;
     const cvvRegex = /^[0-9]{3,4}$/;
 
-    // Validate required fields for guests
-    if (!isLoggedIn) {
+    // Validate required fields for guests (or logged-in users who chose to edit)
+    if (!isLoggedIn || editDetails) {
       if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
       if (!formData.email.trim()) newErrors.email = "Email is required";
       if (!formData.phone.trim()) newErrors.phone = "Phone is required";
@@ -219,8 +222,10 @@ function UserForm() {
       customResponses,
       utm: utmData,
       ...(couponStatus === "valid" && couponCode ? { couponCode: couponCode.trim().toUpperCase() } : {}),
-      // Link to existing user account if logged in
-      ...(isLoggedIn && storedUser?.id ? { userId: storedUser.id } : {})
+      // Link to existing user account only when registering as that account.
+      // If they edited the details to use a different email, treat as a fresh
+      // registrant so the changed email/name is respected.
+      ...(isLoggedIn && !editDetails && storedUser?.id ? { userId: storedUser.id } : {})
     };
 
     try {
@@ -325,8 +330,9 @@ function UserForm() {
           <p>{isPaid ? "Join the masterclass and unlock your potential" : "Grab your free spot before it's gone!"}</p>
         </div>
 
-        {/* Show logged-in user info summary instead of re-asking */}
-        {isLoggedIn && (
+        {/* Show logged-in user info summary instead of re-asking, with an
+            option to register under a different name / email. */}
+        {isLoggedIn && !editDetails && (
           <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <CheckCircle2 size={18} color="#3b82f6" />
@@ -338,13 +344,40 @@ function UserForm() {
             <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
               {formData.email} {formData.phone ? `| ${formData.phone}` : ""}
             </div>
+            <button
+              type="button"
+              onClick={() => setEditDetails(true)}
+              style={{ marginTop: '12px', background: 'none', border: 'none', color: '#3b82f6', fontWeight: 600, fontSize: '13px', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+            >
+              Use a different name / email
+            </button>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="premium-form" autoComplete="off">
-          {/* Only show name/email/phone fields for guests (not logged-in users) */}
-          {!isLoggedIn && (
+          {/* Name/email/phone fields: shown for guests, and for logged-in
+              users who chose to register with different details. */}
+          {(!isLoggedIn || editDetails) && (
             <>
+              {isLoggedIn && editDetails && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditDetails(false);
+                    setErrors({});
+                    setFormData((prev) => ({
+                      ...prev,
+                      firstName: storedUser?.firstname || "",
+                      lastName: storedUser?.lastname || "",
+                      email: storedUser?.email || "",
+                      phone: storedUser?.phone || "",
+                    }));
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: 600, fontSize: '13px', cursor: 'pointer', padding: 0, marginBottom: '12px', textDecoration: 'underline' }}
+                >
+                  ← Back to my account details
+                </button>
+              )}
               <div className="form-grid">
                 <div className="input-group">
                   <label><User size={16} /> First Name</label>

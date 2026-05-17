@@ -168,7 +168,7 @@ function TemplateClassic({ data, onRegister }) {
                   <label>Joining Fee</label>
                   <strong>
                     {isFree ? "FREE" : `\u20B9${price}/-`}
-                    {originalPrice > price && <span className="v2-strike" style={{ marginLeft: "8px", textDecoration: "line-through", color: "#6b7280", fontSize: "14px" }}>\u20B9{originalPrice}</span>}
+                    {originalPrice > price && <span className="v2-strike" style={{ marginLeft: "8px", textDecoration: "line-through", color: "#6b7280", fontSize: "14px" }}>{`\u20B9${originalPrice}`}</span>}
                   </strong>
                 </div>
               </div>
@@ -348,7 +348,7 @@ function TemplateClassic({ data, onRegister }) {
       {/* Final CTA */}
       <div className="v2-corporate-section" style={{ paddingTop: "40px" }}>
         <h2>{isFree ? "Don't Miss This FREE Session!" : `Enroll Now for Just \u20B9${price}/-`}</h2>
-        {originalPrice > price && <p style={{ color: "#6b7280", fontSize: "18px", marginBottom: "16px" }}>Regular Price: <span style={{ textDecoration: "line-through" }}>\u20B9{originalPrice}</span></p>}
+        {originalPrice > price && <p style={{ color: "#6b7280", fontSize: "18px", marginBottom: "16px" }}>Regular Price: <span style={{ textDecoration: "line-through" }}>{`\u20B9${originalPrice}`}</span></p>}
         <button className="v2-secondary-cta" onClick={onRegister} style={{ fontSize: "18px", padding: "18px 48px" }}>{ctaLabel}</button>
       </div>
 

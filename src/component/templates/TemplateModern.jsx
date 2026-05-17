@@ -166,7 +166,7 @@ function TemplateModern({ data, onRegister }) {
                   <span className="tm-detail-label">Joining Fee</span>
                   <strong className="tm-detail-value">
                     {isFree ? "FREE" : `\u20B9${price}/-`}
-                    {originalPrice > price && <span className="tm-strike">\u20B9{originalPrice}</span>}
+                    {originalPrice > price && <span className="tm-strike">{`\u20B9${originalPrice}`}</span>}
                   </strong>
                 </div>
               </div>
@@ -343,7 +343,7 @@ function TemplateModern({ data, onRegister }) {
       {/* Final CTA */}
       <div className="tm-final-cta">
         <h2 className="tm-final-title">{isFree ? "Don't Miss This FREE Session!" : `Enroll Now for Just \u20B9${price}/-`}</h2>
-        {originalPrice > price && <p className="tm-final-price-note">Regular Price: <span style={{ textDecoration: "line-through" }}>\u20B9{originalPrice}</span></p>}
+        {originalPrice > price && <p className="tm-final-price-note">Regular Price: <span style={{ textDecoration: "line-through" }}>{`\u20B9${originalPrice}`}</span></p>}
         <button className="tm-secondary-cta" onClick={onRegister} style={{ fontSize: "1.2rem", padding: "18px 50px" }}>{ctaLabel}</button>
       </div>
 

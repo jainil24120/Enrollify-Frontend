@@ -534,14 +534,54 @@
 
 /* Profile panels */
 .profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
   border-radius: 12px;
   padding: 24px;
+  background: #f8f9fb;
+  border: 1px solid #f3f4f6;
+}
+
+.profile-hero h2 {
+  font-family: var(--font-heading, 'Space Grotesk', sans-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a1a35;
+  margin: 4px 0 2px;
+}
+
+.profile-hero .text-gray {
+  font-size: 0.85rem;
+  margin: 0;
 }
 
 .profile-section {
-  padding: 24px;
+  padding: 20px;
   border-radius: 12px;
   margin-top: 16px;
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+}
+
+.profile-section h4 {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+}
+
+.profile-section .info-row:last-child {
+  border-bottom: none;
+}
+
+/* Label (left) column only — leaves status/plan badges in the value
+   column untouched so they keep their semantic colors. */
+.info-row > span:first-child {
+  color: #6b7280;
 }
 
 /* Progress text */
